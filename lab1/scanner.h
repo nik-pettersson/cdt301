@@ -35,6 +35,7 @@
 #define TRUE 	(1)
 #define FALSE (0)
 #define ERROR (-1)
+#define END (42)
 
 #define SCAN_INIT	(0)
 #define SCAN_GET	(1)
