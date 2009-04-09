@@ -1,0 +1,21 @@
+int max(int i, int j)
+{
+   if (i >= j) {
+      j = i;
+   }
+   return j;
+}
+
+void trac42 (void)
+{
+   int x;
+   int y;
+
+   x = 0;
+   y = 100;
+   while (x != max(x,y)) {
+      write y;
+      read x;
+      read y;
+   }
+}

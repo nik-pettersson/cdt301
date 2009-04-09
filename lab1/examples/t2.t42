@@ -1,0 +1,13 @@
+void trac42 (void)
+{
+   int x;
+   int y;
+   read x;
+   read y;
+   if (x <= 0) {
+      write (x);
+   } else
+      write (x);
+   write (y);
+}
+

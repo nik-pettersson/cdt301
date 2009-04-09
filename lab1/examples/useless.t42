@@ -1,0 +1,4 @@
+void trac42 (void)
+{
+   x = 0;
+}

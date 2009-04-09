@@ -1,0 +1,19 @@
+void trac42 (void)
+{
+   int foo, bar;
+   /*
+   Kommentarer
+   kan
+   också
+   sträcka
+   sig
+   över
+   flera
+   rader
+   */
+   if (foo==bar)
+      write 3;
+      write 7;
+   else
+      write 42;
+} /* Detta program är uppenbarligen syntaktiskt fel. Ingen kod ska genereras. */
