@@ -33,31 +33,33 @@ stmt	->	if
 	|	while
 	|	assign ;
 	|	call ;
-	|	WRITE expr ;
+	|	WRITE exprs ;
 	|	READ ID ;
-	|	RETURN expr ;
+	|	RETURN exprs ;
 
-if	->	IF ( expr ) { stmts } else
-	|	IF ( expr ) stmt else
+if	->	IF ( exprs ) { stmts } else
+	|	IF ( exprs ) stmt else
 
 else	->	ELSE { stmts }
 	|	ELSE stmt
 	|	e
 
-while	->	WHILE ( expr ) { stmts }
-	|	WHILE ( expr ) stmt
+while	->	WHILE ( exprs ) { stmts }
+	|	WHILE ( exprs ) stmt
 
-assign	->	ID = expr
+assign	->	ID = exprs
 
-call	->	ID ( expr optexpr )
+call	->	ID ( exprs optexpr )
 	|	ID ( )
 
-optexpr	->	, expr
+optexpr	->	, exprs
 	|	e
+
+exprs	->	expr RELOP exprs
+	|	expr
 
 expr	->	expr + term
 	|	expr - term
-	|	expr RELOP expr
 	|	term
 
 term	->	term * factor
@@ -68,7 +70,7 @@ factor	->	! factor
 	|	call
 	|	ID
 	|	NUM
-	|	( expr )
+	|	( exprs )
 
 
 2*3==3*2
