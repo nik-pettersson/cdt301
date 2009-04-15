@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define RETURN (1)
 #define IF	(2)
@@ -30,6 +31,10 @@
 #define DIVOP (19)
 #define NOTOP (20)
 #define RELATIONOP (21) //är någon av == <= >= != 
+	#define EQUAL (1)
+	#define NOTEQUAL (2)
+	#define BIGGER	(3)
+	#define SMALLER	(4)
 #define ID (22) // där lexemet som ID representerar är: bokstav(bokstav U siffra)*
 #define NUM (23) //där lexemet som NUM representerar är: siffra+
 #define TRUE 	(1)
@@ -42,5 +47,5 @@
 
 
 FILE * globalFile(int cmd, char * file);
-void getNextToken (int *token, int *value);
+void getNextToken (int *token, int *value, char * str);
 #endif

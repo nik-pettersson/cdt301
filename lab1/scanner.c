@@ -23,12 +23,6 @@ int isNumeric(char arg){
 		return FALSE;
 }
 
-int matchString(char * buf, int pos, char * target){
-	FILE * fp = globalFile(SCAN_GET, "");
-	while(1){
-	
-	}
-}
 /*
  * Handler for a file pointer
  */
@@ -54,6 +48,9 @@ char readNext(FILE *fp){
 	return ret;
 }
 
+/*
+ * Match an Integer.
+ */
 char * matchNum(char c){
 	char * buf = (char *)malloc(sizeof(char)*20);
 	FILE * fp = globalFile(SCAN_GET, "");
@@ -75,65 +72,101 @@ char * matchNum(char c){
 	}
 }
 
-char * matchId(char * arg){
-	return "nope";
+int matchId(char * target, char * arg, int * ppos){
+	int pos = *ppos;
+	FILE * fp = globalFile(SCAN_GET, "");
+	for(;pos < strlen(target);pos++, arg[pos] = readNext(fp)){
+		if(arg[pos] == target[pos]);
+		else{
+			ungetc(arg[pos],fp);
+			arg[pos] = ' ';
+			*ppos = pos;
+			return 0;
+		}
+	}
+	*ppos = pos;
+	return 1;
 }
 
-void getNextToken (int *token, int *value){
+void IdMatch(char * buf, int * ppos){
+	FILE * fp = globalFile(SCAN_GET, "");
+	int pos = *ppos;
+	char c = readNext(fp);
+	while(isAlpha(c) || isNumeric(c)){
+		pos++;
+		c = readNext(fp);
+		buf[pos] = c;
+	}
+	ungetc(c, fp);
+	*ppos = pos;
+}
+
+void getNextToken (int *token, int *value, char * str){
 	static int lineno = 0;
+	int pos;
 	int match = FALSE;
 	int flag = FALSE;
 	char c;
-	char * buf;
+	char * buf = (char *)malloc(sizeof(char)*64);
 	FILE * fp = globalFile(SCAN_GET, "");
 	printf("\n%d: ", lineno);
-	while(!match){
 		c = readNext(fp);
 		if(c == '\n'){
 			lineno++;
 			printf("\n%d: ", lineno);
 		}
 		else if(c == '\t' || c == ' ');
-			//ignore white spaces
+		//ignore white spaces
 		else if(c == '\0'){
-			printf("EOF...");
-			//*token = END; 
+			//printf("EOF...");
+			*token = END; 
 			match = TRUE;
 		}
 		else{
 			switch(c){
 				case '(':
+					*token = LEFTPARENTHESIS;
 					printf(" leftparanthesis ");
 					break;
 				case ')':
+					*token = RIGHTPARENTHESIS;
 					printf(" rightparanthesis ");
 					break;
 				case ',':
+					*token = COMMA;
 					printf(" comma ");
 					break;
 				case '{':
+					*token = LEFTBRACE;
 					printf(" leftbrace ");
 					break;
 				case '}':
+					*token = RIGHTBRACE;
 					printf(" rightbrace ");
 					break;
 				case ';':
+					*token = SEMICOLON;
 					printf(" semicolon ");
 					break;
 				case '=':
+					*token = RELATIONOP;
 					c = readNext(fp);
 					if(c == '='){
-						printf(" relationop(equal) ");
+						*value = EQUAL;
+						printf(" relationiop(equal) ");
 					}
 					else{
 						ungetc(c, fp);
+						*token = ASSIGNOP;
 						printf(" assignop ");
 					}
 					break;
 				case '+':
+					*token = PLUSOP;
 					printf(" plusop ");
 					break;
 				case '-':
+					*token = MINUSOP;
 					printf(" minusop ");
 					break;
 				case '/':
@@ -157,36 +190,46 @@ void getNextToken (int *token, int *value){
 						break;
 					}
 					else{
+						*token = DIVOP;
 						printf(" divop ");
 						ungetc(c, fp);
 						flag = FALSE;
 					}
 					break;
 				case '*':
+					*token = MULTOP;
 					printf(" mulop ");
 					break;
 				case '!':
 					c = readNext(fp);
 					if( c != '='){
+						*token = NOTOP;
 						ungetc(c, fp);
 						printf(" notop ");
 					}
-					else
+					else{
+						*token = RELATIONOP;
+						*value = NOTEQUAL;
 						printf(" relationop(not equal) ");
+					}
 					break;
 				case '>':
 					c = readNext(fp);
 					if( c != '=')
 						ungetc(c, fp);
-					else
+					else{
+						*token = BIGGER;
 						printf(" relationop(bigger)");
+					}
 					break;
 				case '<':
 					c = readNext(fp);
 					if( c != '=')
 						ungetc(c, fp);
-					else
+					else{
+						*token = SMALLER;
 						printf(" relationop(smaller) ");
+					}
 					break;
 				case '0':
 				case '1':
@@ -199,37 +242,82 @@ void getNextToken (int *token, int *value){
 				case '8':
 				case '9':
 					buf = matchNum(c);
+					*token = NUM;
+					*value = atoi(buf);
 					printf("num(%d)", atoi(buf));
 					break;
 				default:
 					if(isAlpha(c)){
+						pos = 0;
 						switch(c){
 							case 'r':
-								//matchString("return", buf);
+								buf[pos] = c;
+								if(matchId("return", buf, &pos)){
+									*token = RETURN;
+								}
+								else if(matchId("read", buf, &pos))
+									*token = READ;
+								else{
+									IdMatch(buf, &pos);
+									*token = ID;
+									strcpy(str, buf);
+								}
 								break;
 							case 'i':
+								buf[pos] = c;
+								if(matchId("if", buf, &pos))
+									*token = IF;
+								else if(matchId("int", buf, &pos))
+									*token = INT;
+								else{
+									IdMatch(buf, &pos);
+									*token = ID;
+									strcpy(str, buf);
+								}
 								break;
 							case 'w':
+								buf[0] = c;
+								if(matchId("while", buf, 0))
+									*token = WHILE;
+								else if(matchId("write", buf, 0))
+									*token = WRITE;
+								else{
+									IdMatch(buf, &pos);
+									*token = ID;
+									strcpy(str, buf);
+								}
 								break;
 							case 'e':
+								buf[0] = c;
+								if(matchId("else", buf, 0))
+									*token = ELSE;
+								else{
+									IdMatch(buf, &pos);
+									*token = ID;
+									strcpy(str, buf);
+								}
 								break;
 							case 'v':
+								buf[0] = c;
+								if(matchId("void", buf, 0))
+									*token = VOID;
+								else{
+									IdMatch(buf, &pos);
+									*token = ID;
+									strcpy(str, buf);
+								}
 								break;
 							default:
-								while(isAlpha(c)){
-									c = readNext(fp);
-									if(!isAlpha(c))
-										ungetc(c, fp);
-								}
-								printf(" id ");
-								break;
+								buf[0] = c;
+								IdMatch(buf, &pos);
+								*token = ID;
+								strcpy(str,buf);
 						}
 					}
 					else
-						printf(" not a token%c",c);
+						*token = ERROR;
 					break;
 			}
 		}
-	}
 	return;
 }
