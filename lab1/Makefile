@@ -4,7 +4,7 @@
 # */
 
 PROG = app.out
-OBJS = scanner.o main.o
+OBJS = scanner.o main.o printer.o
 CC = gcc
 LD = gcc
 LDFLAGS = -o
@@ -19,6 +19,8 @@ main.o: main.c
 	$(CC) $(CFLAGS) main.o main.c
 scanner.o: scanner.c
 	$(CC) $(CFLAGS) scanner.o scanner.c
+printer.o: printer.c
+	$(CC) $(CFLAGS) printer.o printer.c
 
 clean:
 	rm -f $(PROG) $(OBJS) *~
