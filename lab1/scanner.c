@@ -80,7 +80,6 @@ int matchId(char * target, char * arg, int * ppos){
 	char c = arg[pos];
 	FILE * fp = globalFile(SCAN_GET, "");
 	for(;pos < (strlen(target));pos++, c = readNext(fp)){
-		//printf("%d %s %s", pos, target, arg);
 		if(c == target[pos])
 			arg[pos] = c;
 		else{
@@ -123,13 +122,10 @@ void getNextToken (int *token, int *value, char * str){
 		c = readNext(fp);
 		if(c == '\n'){
 			lineno++;
-			printf("\n%d: ", lineno);
 		}
-		else if(c == '\t' || c == ' '||  c == '\0')
-			printf("*");
+		else if(c == '\t' || c == ' '||  c == '\0');
 		//ignore white spaces
 		else if(c == '\004'){
-			printf("EOF...");
 			*token = END; 
 			match = TRUE;
 		}
@@ -324,11 +320,9 @@ void getNextToken (int *token, int *value, char * str){
 								strncpy(str, buf, 64);
 								break;
 						}
-						printf("\n%d, %s\n",*token, buf);
 						//strncpy(str,buf,64);
 						match = TRUE;
 						c = readNext(fp);
-						printf("\nc = %c", c);
 						ungetc(c, fp);
 					}
 					else{
