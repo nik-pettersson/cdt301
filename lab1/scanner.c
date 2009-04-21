@@ -1,6 +1,7 @@
 /* Text: Lexical analyser 
  * Author: Niklas Pettersson, Lars Cederholm
  * Date: Tue Apr 7
+ * SEALOFAPPROVAL: 2009-04-21-14:00
  */
 #include "scanner.h"
 
@@ -44,7 +45,9 @@ FILE * globalFile(int cmd, char * file){
  */
 char readNext(FILE *fp){
 	char ret;
-	fread(&ret, 1, 1, fp);
+	if(fread(&ret, 1, 1, fp));
+	else
+		ret = '\004';
 	return ret;
 }
 
@@ -74,16 +77,20 @@ char * matchNum(char c){
 
 int matchId(char * target, char * arg, int * ppos){
 	int pos = *ppos;
+	char c = arg[pos];
 	FILE * fp = globalFile(SCAN_GET, "");
-	for(;pos < strlen(target);pos++, arg[pos] = readNext(fp)){
-		if(arg[pos] == target[pos]);
+	for(;pos < (strlen(target));pos++, c = readNext(fp)){
+		//printf("%d %s %s", pos, target, arg);
+		if(c == target[pos])
+			arg[pos] = c;
 		else{
-			ungetc(arg[pos],fp);
-			arg[pos] = ' ';
+			ungetc(c,fp);
+			pos--;
 			*ppos = pos;
 			return 0;
 		}
 	}
+	ungetc(c,fp);
 	*ppos = pos;
 	return 1;
 }
@@ -91,34 +98,38 @@ int matchId(char * target, char * arg, int * ppos){
 void IdMatch(char * buf, int * ppos){
 	FILE * fp = globalFile(SCAN_GET, "");
 	int pos = *ppos;
-	char c = readNext(fp);
-	while(isAlpha(c) || isNumeric(c)){
-		pos++;
+	char c;// = readNext(fp);
+	do{	
+	pos++;
 		c = readNext(fp);
 		buf[pos] = c;
-	}
+	}while(isAlpha(c) || isNumeric(c));
+	buf[pos] = ' ';
+	pos--;
 	ungetc(c, fp);
 	*ppos = pos;
 }
 
 void getNextToken (int *token, int *value, char * str){
-	static int lineno = 0;
+	static int lineno = 1;
 	int pos;
 	int match = FALSE;
 	int flag = FALSE;
 	char c;
 	char * buf = (char *)malloc(sizeof(char)*64);
 	FILE * fp = globalFile(SCAN_GET, "");
-	printf("\n%d: ", lineno);
+	strncpy(str, "", 64);
+	while(!match){
 		c = readNext(fp);
 		if(c == '\n'){
 			lineno++;
 			printf("\n%d: ", lineno);
 		}
-		else if(c == '\t' || c == ' ');
+		else if(c == '\t' || c == ' '||  c == '\0')
+			printf("*");
 		//ignore white spaces
-		else if(c == '\0'){
-			//printf("EOF...");
+		else if(c == '\004'){
+			printf("EOF...");
 			*token = END; 
 			match = TRUE;
 		}
@@ -126,48 +137,47 @@ void getNextToken (int *token, int *value, char * str){
 			switch(c){
 				case '(':
 					*token = LEFTPARENTHESIS;
-					printf(" leftparanthesis ");
+					match = TRUE;
 					break;
 				case ')':
 					*token = RIGHTPARENTHESIS;
-					printf(" rightparanthesis ");
+					match = TRUE;
 					break;
 				case ',':
 					*token = COMMA;
-					printf(" comma ");
+					match = TRUE;
 					break;
 				case '{':
 					*token = LEFTBRACE;
-					printf(" leftbrace ");
+					match = TRUE;
 					break;
 				case '}':
 					*token = RIGHTBRACE;
-					printf(" rightbrace ");
+					match = TRUE;
 					break;
 				case ';':
 					*token = SEMICOLON;
-					printf(" semicolon ");
+					match = TRUE;
 					break;
 				case '=':
 					*token = RELATIONOP;
 					c = readNext(fp);
 					if(c == '='){
 						*value = EQUAL;
-						printf(" relationiop(equal) ");
 					}
 					else{
 						ungetc(c, fp);
 						*token = ASSIGNOP;
-						printf(" assignop ");
 					}
+					match = TRUE;
 					break;
 				case '+':
 					*token = PLUSOP;
-					printf(" plusop ");
+					match = TRUE;
 					break;
 				case '-':
 					*token = MINUSOP;
-					printf(" minusop ");
+					match = TRUE;
 					break;
 				case '/':
 					c = readNext(fp);
@@ -177,59 +187,58 @@ void getNextToken (int *token, int *value, char * str){
 							c = readNext(fp);
 							if(c == '\n'){
 								lineno++;
-								printf("\n%d:", lineno);
 							}
 							else if(c == '*'){
 								flag = TRUE;
 								c = readNext(fp);
 							}
 						}
-						printf(" COMMENT ");
-						//ungetc(c, fp);
 						flag = FALSE;
+						match = TRUE;
 						break;
 					}
 					else{
 						*token = DIVOP;
-						printf(" divop ");
 						ungetc(c, fp);
 						flag = FALSE;
 					}
+					match = TRUE;
 					break;
 				case '*':
 					*token = MULTOP;
-					printf(" mulop ");
+					match = TRUE;
 					break;
 				case '!':
 					c = readNext(fp);
 					if( c != '='){
 						*token = NOTOP;
 						ungetc(c, fp);
-						printf(" notop ");
 					}
 					else{
 						*token = RELATIONOP;
 						*value = NOTEQUAL;
-						printf(" relationop(not equal) ");
 					}
+					match = TRUE;
 					break;
 				case '>':
 					c = readNext(fp);
 					if( c != '=')
 						ungetc(c, fp);
 					else{
-						*token = BIGGER;
-						printf(" relationop(bigger)");
+						*token = RELATIONOP;
+						*value = BIGGER;
 					}
+					match = TRUE;
 					break;
 				case '<':
 					c = readNext(fp);
 					if( c != '=')
 						ungetc(c, fp);
 					else{
-						*token = SMALLER;
-						printf(" relationop(smaller) ");
+						*token = RELATIONOP;
+						*value = SMALLER;
 					}
+					match = TRUE;
 					break;
 				case '0':
 				case '1':
@@ -244,7 +253,7 @@ void getNextToken (int *token, int *value, char * str){
 					buf = matchNum(c);
 					*token = NUM;
 					*value = atoi(buf);
-					printf("num(%d)", atoi(buf));
+					match = TRUE;
 					break;
 				default:
 					if(isAlpha(c)){
@@ -260,7 +269,7 @@ void getNextToken (int *token, int *value, char * str){
 								else{
 									IdMatch(buf, &pos);
 									*token = ID;
-									strcpy(str, buf);
+									strncpy(str, buf, 64);
 								}
 								break;
 							case 'i':
@@ -272,52 +281,63 @@ void getNextToken (int *token, int *value, char * str){
 								else{
 									IdMatch(buf, &pos);
 									*token = ID;
-									strcpy(str, buf);
+									strncpy(str, buf, 64);
 								}
 								break;
 							case 'w':
 								buf[0] = c;
-								if(matchId("while", buf, 0))
+								if(matchId("while", buf, &pos))
 									*token = WHILE;
-								else if(matchId("write", buf, 0))
+								else if(matchId("write", buf, &pos))
 									*token = WRITE;
 								else{
 									IdMatch(buf, &pos);
 									*token = ID;
-									strcpy(str, buf);
+									strncpy(str, buf, 64);
 								}
 								break;
 							case 'e':
 								buf[0] = c;
-								if(matchId("else", buf, 0))
+								if(matchId("else", buf, &pos)){
 									*token = ELSE;
+								}
 								else{
 									IdMatch(buf, &pos);
 									*token = ID;
-									strcpy(str, buf);
+									strncpy(str, buf, 64);
 								}
 								break;
 							case 'v':
 								buf[0] = c;
-								if(matchId("void", buf, 0))
+								if(matchId("void", buf, &pos))
 									*token = VOID;
 								else{
 									IdMatch(buf, &pos);
 									*token = ID;
-									strcpy(str, buf);
+									strncpy(str, buf, 64);
 								}
 								break;
 							default:
 								buf[0] = c;
 								IdMatch(buf, &pos);
 								*token = ID;
-								strcpy(str,buf);
+								strncpy(str, buf, 64);
+								break;
 						}
+						printf("\n%d, %s\n",*token, buf);
+						//strncpy(str,buf,64);
+						match = TRUE;
+						c = readNext(fp);
+						printf("\nc = %c", c);
+						ungetc(c, fp);
 					}
-					else
+					else{
 						*token = ERROR;
-					break;
+						match = TRUE;
+					}
 			}
 		}
+	}
+	free(buf);
 	return;
 }
