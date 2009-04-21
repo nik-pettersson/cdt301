@@ -39,10 +39,16 @@ int Type(int *tok, int *val);
 int Body(int *tok, int *val);
 
 /*
- * decl		->	INT ID optpar ; decl
+ * decl		->	INT ID decls decl
  *				|		e
  */
 int Decl(int *tok, int *val);
+
+/*
+ * decls	->	, INT ID decls
+ * 				|		;
+ */
+int Decls(int *tok, int *val);
 
 /*
  * stmts	->	stmt stmts
@@ -51,10 +57,9 @@ int Decl(int *tok, int *val);
 int Stmts(int *tok, int *val);
 
 /*
- * stmt		->	if
- *				|		while
- *				|		assign ;
- *				|		call ;
+ * stmt		->	IF if
+ *				|		WHILE while
+ *				|		ID call ;
  *				|		WRITE expr ;
  *				|		READ ID ;
  *				|		RETURN expr ;
@@ -62,33 +67,28 @@ int Stmts(int *tok, int *val);
 int Stmt(int *tok, int *val);
 
 /*
- * if			->	IF ( expr ) { stmts } else
- *				|		IF ( expr ) stmt else
+ * if			->	( expr ) { stmts } else
+ *				|		( expr ) stmt else
  */
 int If(int *tok, int *val);
 
 /*
- * else		->	ELSE { stmts }
- *				|		ELSE stmt
+ * else		->	{ stmts
+ *				|		stmt
  *				|		e
  */
 int Else(int *tok, int *val);
 
 /*
- * while	->	WHILE ( expr ) { stmts }
- *				|		WHILE ( expr ) stmt
+ * while	->	( expr ) { stmts
+ *				|		( expr ) stmt
  */
 int While(int *tok, int *val);
 
 /*
- * assign	->	ID ASSIGNOP expr
- */
-int Assign(int *tok, int *val);
-
-/*
- * call		->	ID ( expr optexpr )
- *				|		ID ( )
- *				|		ID
+ * call		->	( expr optexpr )
+ *				|		( )
+ *				|		ASSIGNOP expr
  */
 int Call(int *tok, int *val);
 

@@ -171,24 +171,85 @@ int Type(int *tok, int *val) {
  * body		->	{ decl stmts
  */
 int Body(int *tok, int *val) {
-	int acc = FALSE;
+	int acc;
 
-	if(matchNextToken(LEFTBRACE)) {
-		if(decl())
-			acc = Stmts();
+	switch(*tok) {
+		case LEFTBRACE:
+			getNextToken(tok, val, NULL);
+			if(Decl(tok, val)) {
+				acc = Stmts(tok, val);
+			}
+			break;
+		default:
+			acc = FALSE;
+			break;
 	}
+
 	return acc;
 }
 
 /*
- * decl		->	INT ID optpar ; decl
+ * decl		->	INT ID decls decl
  *				|		e
  */
 int Decl(int *tok, int *val) {
-	int tok, val;
 	int acc;
 
-	if(ma
+	switch(*tok) {
+		case INT:
+			getNextToken(tok, val, NULL);
+			if(*tok == ID) {
+				getNextToken(tok, val, NULL);
+				if(Decls(tok, val)) {
+					acc = Decl(tok, val);
+				}
+				else {
+					acc = FALSE
+				}
+			}
+			else {
+				acc = FALSE;
+			}
+			break;
+		default:
+			acc = TRUE; // Not a declaration (matches epsilon)
+			break;
+	}
+
+	return acc;
+}
+
+/*
+ * decls	->	, INT ID decls
+ * 				|		;
+ */
+int Decls(int *tok, int *val) {
+	int acc;
+
+	switch(*tok) {
+		case COMMA:
+			getNextToken(tok, val, NULL);
+			if(*tok == INT) {
+				getNextToken(tok, val);
+				if(*tok == ID) {
+					getNextToken(tok, val, NULL);
+					acc = Decls(tok, val);
+				}
+				else {
+					acc = FALSE;
+				}
+			}
+			else {
+				acc = FALSE;
+			}
+			break;
+		case SEMICOLON:
+			acc = TRUE;
+			break;
+		default:
+			acc = FALSE;
+			break;
+	}
 
 	return acc;
 }
@@ -198,61 +259,197 @@ int Decl(int *tok, int *val) {
  *				|		stmt }
  */
 int Stmts(int *tok, int *val) {
-	return 0;
+	int acc;
+
+	if(Stmt(tok, val)) {
+		switch(*tok) {
+			case RIGHTBRACE:
+				getNextToken(tok, val, NULL);
+				acc = TRUE;
+				break;
+			default:
+				acc = Stmts(tok, val);
+				break;
+		}
+	}
+	else {
+		acc = FALSE;
+	}
+
+	return acc;
 }
 
 /*
- * stmt		->	if
- *				|		while
- *				|		assign ;
- *				|		call ;
+ * stmt		->	IF if
+ *				|		WHILE while
+ *				|		ID call ;
  *				|		WRITE expr ;
  *				|		READ ID ;
  *				|		RETURN expr ;
  */
 int Stmt(int *tok, int *val) {
-	return 0;
+	int acc;
+
+	// Consume the first token for the corresponding rules.
+	// This results in a slight deviation from the grammar.
+	switch(*tok) {
+		case IF:
+			getNextToken(tok, val, NULL);
+			acc = If(tok, val);
+			break;
+		case WHILE:
+			getNextToken(tok, val, NULL);
+			acc = While(tok, val);
+			break;
+		case WRITE:
+			getNextToken(tok, val, NULL);
+			acc = Expr(tok, val);
+			break;
+		case READ:
+			getNextToken(tok, val, NULL);
+			if(*tok == ID) {
+				getNextToken(tok, val, NULL);
+				acc = TRUE;
+			}
+			break;
+		case RETURN:
+			getNextToken(tok, val, NULL);
+			acc = Expr(tok, val);
+			break;
+		case ID:
+			getNextToken(tok, val, NULL);
+			acc = Call(tok, val);
+			break;
+		default:
+			acc = FALSE;
+			break;
+	}
+
+	return acc;
 }
 
 /*
- * if			->	IF ( expr ) { stmts } else
- *				|		IF ( expr ) stmt else
+ * if			->	( expr ) { stmts else
+ *				|		( expr ) stmt else
  */
 int If(int *tok, int *val) {
-	return 0;
+	int acc;
+
+	if(*tok != LEFTPARENTHESIS)
+		return FALSE;
+	getNextToken(tok, val, NULL);
+	if(!Expr(tok, val))
+		return FALSE;
+	if(*tok != RIGHTPARENTHESIS)
+		return FALSE;
+	
+	getNextToken(tok, val, NULL);
+	switch(*tok) {
+		case LEFTBRACE:
+			getNextToken(tok, val, NULL);
+			if(!Stmts(tok, val))
+				return FALSE;
+			acc = Else(tok, val);
+			break;
+		default:
+			if(!Stmt(tok, val))
+				return FALSE;
+			acc = Else(tok, val);
+			break;
+	}
+
+	return acc;
 }
 
 /*
- * else		->	ELSE { stmts }
+ * else		->	ELSE { stmts
  *				|		ELSE stmt
  *				|		e
  */
 int Else(int *tok, int *val) {
-	return 0;
+	int acc;
+
+	if(*tok != ELSE)
+		return TRUE;
+
+	getNextToken(tok, val, NULL);
+	switch(*tok) {
+		case LEFTBRACE:
+			getNextToken(tok, val, NULL);
+			acc = Stmts(tok, val);
+			break;
+		default:
+			acc = Stmt(tok, val);
+			break;
+	}
+
+	return acc;
 }
 
 /*
- * while	->	WHILE ( expr ) { stmts }
- *				|		WHILE ( expr ) stmt
+ * while	->	( expr ) { stmts
+ *				|		( expr ) stmt
  */
 int While(int *tok, int *val) {
-	return 0;
+	int acc;
+
+	if(*tok != LEFTPARENTHESIS)
+		return FALSE;
+
+	getNextToken(tok, val, NULL);
+	if(!Expr(tok, val))
+		return FALSE;
+	if(*tok != RIGHTPARENTHESIS)
+		return FALSE;
+
+	getNextToken(tok, val, NULL);
+	switch(*tok) {
+		case LEFTBRACE:
+			getNextToken(tok, val, NULL);
+			acc = Stmts(tok, val);
+			break;
+		default:
+			acc = Stmt(tok, val);
+			break;
+	}
+
+	return acc;
 }
 
 /*
- * assign	->	ID ASSIGNOP expr
- */
-int Assign(int *tok, int *val) {
-	return 0;
-}
-
-/*
- * call		->	ID ( expr optexpr )
- *				|		ID ( )
- *				|		ID
+ * call		->	( expr optexpr )
+ *				|		( )
+ *				|		ASSIGNOP expr
  */
 int Call(int *tok, int *val) {
-	return 0;
+	int acc;
+
+	switch(*tok) {
+		case LEFTPARENTHESIS:
+			getNextToken(tok, val, NULL);
+			switch(*tok) {
+				case RIGHTPARENTHESIS:
+					getNextToken(tok, val, NULL);
+					acc = TRUE;
+					break;
+				default:
+					if(!Expr(tok, val))
+						acc = FALSE;
+					else 
+						acc = Optexpr(tok, val);
+					break;
+			}
+			break;
+		case ASSIGNOP:
+			getNextToken(tok, val, NULL);
+			acc = Expr(tok, val);
+			break;
+		default:
+			acc = FALSE;
+			break;
+	}
+
+	return acc;
 }
 
 /*
@@ -260,14 +457,33 @@ int Call(int *tok, int *val) {
  *					|		e
  */
 int Optexpr(int *tok, int *val) {
-	return 0;
+	int acc;
+
+	switch(*tok) {
+		case COMMA:
+			getNextToken(tok, val, NULL);
+			acc = Expr(tok, val);
+			break;
+		default:
+			acc = TRUE;
+			break;
+	}
+
+	return acc;
 }
 
 /*
  * expr		->	term exprs
  */
 int Expr(int *tok, int *val) {
-	return 0;
+	int acc;
+
+	if(Term(tok, val))
+		acc = Exprs(tok, val);
+	else
+		acc = FALSE;
+
+	return acc;
 }
 
 /*
@@ -275,14 +491,33 @@ int Expr(int *tok, int *val) {
  *				|		e
  */
 int Exprs(int *tok, int *val) {
-	return 0;
+	int acc;
+
+	if(*tok == RELATIONOP) {
+		getNextToken(tok, val, NULL);
+		if(Term(tok, val))
+			acc = Exprs(tok, val);
+		else
+			acc = FALSE;
+	}
+	else
+		acc = TRUE;
+
+	return acc;
 }
 
 /*
  * term		->	factor terms
  */
 int Term(int *tok, int *val) {
-	return 0;
+	int acc;
+
+	if(Factor(tok, val))
+		acc = Terms(tok, val);
+	else
+		acc = FALSE;
+
+	return acc;
 }
 
 /*
@@ -291,7 +526,29 @@ int Term(int *tok, int *val) {
  *					|		e
  */
 int Terms(int *tok, int *val) {
-	return 0;
+	int acc;
+
+	switch(*tok) {
+		case PLUSOP:
+			getNextToken(tok, val, NULL);
+			if(Factor(tok, val))
+				acc = Terms(tok, val);
+			else
+				acc = FALSE;
+			break;
+		case MINUSOP:
+			getNextTOken(tok, val, NULL);
+			if(Factor(tok, val))
+				acc = Terms(tok, val);
+			else
+				acc = FALSE;
+			break;
+		default:
+			acc = TRUE;
+			break;
+	}
+
+	return acc;
 }
 
 /*
