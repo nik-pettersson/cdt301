@@ -5,11 +5,12 @@
  */
 int Prog(int *tok, int *val) {
 	int acc;
-
+	printf("+++ Prog +++\n");
 	getNextToken(tok, val, NULL);
 	if(Func(tok, val)) {
 		acc = Funclst(tok, val);
 	}
+	printf("\n--- Prog ---\n");
 	return acc;
 }
 
@@ -20,6 +21,7 @@ int Prog(int *tok, int *val) {
 int Funclst(int *tok, int *val) {
 	int acc;
 
+	printf("+++ Funclst +++\n");
 	switch(*tok) {
 		case END:
 			acc = TRUE;
@@ -28,6 +30,7 @@ int Funclst(int *tok, int *val) {
 			getNextToken(tok, val, NULL);
 			acc = Func(tok, val);
 	}
+	printf("\n--- Funclst ---\n");
 	return acc;
 }
 
@@ -37,6 +40,7 @@ int Funclst(int *tok, int *val) {
 int Func(int *tok, int *val) {
 	int acc;
 	
+	printf("+++ Func +++\n");
 	if(Type(tok, val)) {
 		switch(*tok) {
 			case ID:
@@ -60,6 +64,7 @@ int Func(int *tok, int *val) {
 		}
 	}
 
+	printf("\n--- Func ---\n");
 	return acc;
 }
 
@@ -70,6 +75,7 @@ int Func(int *tok, int *val) {
 int Params(int *tok, int *val) {
 	int acc;
 
+	printf("+++ Params +++\n");
 	switch(*tok) {
 		case VOID:
 			getNextToken(tok, val, NULL);
@@ -93,6 +99,7 @@ int Params(int *tok, int *val) {
 			break;
 	}
 
+	printf("\n--- Params ---\n");
 	return acc;
 }
 
@@ -103,6 +110,7 @@ int Params(int *tok, int *val) {
 int Optparams(int *tok, int *val) {
 	int acc;
 
+	printf("+++ Optparams +++\n");
 	switch(*tok) {
 		case RIGHTPARENTHESIS:
 			acc = TRUE;
@@ -129,6 +137,7 @@ int Optparams(int *tok, int *val) {
 			break;
 	}
 
+	printf("\n--- Optparams ---\n");
 	return acc;
 }
 
@@ -139,6 +148,8 @@ int Optparams(int *tok, int *val) {
 int Type(int *tok, int *val) {
 	int acc;
 
+	printf("+++ Type +++\n");
+
 	switch(*tok) {
 		case VOID:
 		case INT:
@@ -148,6 +159,7 @@ int Type(int *tok, int *val) {
 			acc = FALSE;
 			break;
 	}
+	printf("\n--- Type ---\n");
 	return acc;
 }
 
@@ -157,6 +169,7 @@ int Type(int *tok, int *val) {
 int Body(int *tok, int *val) {
 	int acc;
 
+	printf("+++ Body +++\n");
 	switch(*tok) {
 		case LEFTBRACE:
 			getNextToken(tok, val, NULL);
@@ -169,6 +182,7 @@ int Body(int *tok, int *val) {
 			break;
 	}
 
+	printf("\n--- Body ---\n");
 	return acc;
 }
 
@@ -179,6 +193,7 @@ int Body(int *tok, int *val) {
 int Decl(int *tok, int *val) {
 	int acc;
 
+	printf("+++ Decl +++\n");
 	switch(*tok) {
 		case INT:
 			getNextToken(tok, val, NULL);
@@ -200,6 +215,7 @@ int Decl(int *tok, int *val) {
 			break;
 	}
 
+	printf("\n--- Decl ---\n");
 	return acc;
 }
 
@@ -210,6 +226,7 @@ int Decl(int *tok, int *val) {
 int Decls(int *tok, int *val) {
 	int acc;
 
+	printf("+++ Decls +++\n");
 	switch(*tok) {
 		case COMMA:
 			getNextToken(tok, val, NULL);
@@ -235,6 +252,7 @@ int Decls(int *tok, int *val) {
 			break;
 	}
 
+	printf("\n--- Decls ---\n");
 	return acc;
 }
 
@@ -245,6 +263,7 @@ int Decls(int *tok, int *val) {
 int Stmts(int *tok, int *val) {
 	int acc;
 
+	printf("+++ Stmts +++\n");
 	if(Stmt(tok, val)) {
 		switch(*tok) {
 			case RIGHTBRACE:
@@ -260,6 +279,7 @@ int Stmts(int *tok, int *val) {
 		acc = FALSE;
 	}
 
+	printf("\n--- Stmts ---\n");
 	return acc;
 }
 
@@ -274,6 +294,7 @@ int Stmts(int *tok, int *val) {
 int Stmt(int *tok, int *val) {
 	int acc;
 
+	printf("+++ Stmt +++\n");
 	// Consume the first token for the corresponding rules.
 	// This results in a slight deviation from the grammar.
 	switch(*tok) {
@@ -309,6 +330,7 @@ int Stmt(int *tok, int *val) {
 			break;
 	}
 
+	printf("\n--- Stmt ---\n");
 	return acc;
 }
 
@@ -319,6 +341,7 @@ int Stmt(int *tok, int *val) {
 int If(int *tok, int *val) {
 	int acc;
 
+	printf("+++ If +++\n");
 	if(*tok != LEFTPARENTHESIS)
 		return FALSE;
 	getNextToken(tok, val, NULL);
@@ -342,6 +365,7 @@ int If(int *tok, int *val) {
 			break;
 	}
 
+	printf("\n--- If ---\n");
 	return acc;
 }
 
@@ -353,8 +377,11 @@ int If(int *tok, int *val) {
 int Else(int *tok, int *val) {
 	int acc;
 
-	if(*tok != ELSE)
+	printf("+++ Else +++\n");
+	if(*tok != ELSE) {
+		printf("\n--- Else ---\n");
 		return TRUE;
+	}
 
 	getNextToken(tok, val, NULL);
 	switch(*tok) {
@@ -367,6 +394,7 @@ int Else(int *tok, int *val) {
 			break;
 	}
 
+	printf("\n--- Else ---\n");
 	return acc;
 }
 
@@ -377,14 +405,21 @@ int Else(int *tok, int *val) {
 int While(int *tok, int *val) {
 	int acc;
 
-	if(*tok != LEFTPARENTHESIS)
+	printf("+++ While +++\n");
+	if(*tok != LEFTPARENTHESIS) {
+		printf("\n--- While ---\n");
 		return FALSE;
+	}
 
 	getNextToken(tok, val, NULL);
-	if(!Expr(tok, val))
+	if(!Expr(tok, val)) {
+		printf("\n--- While ---\n");
 		return FALSE;
-	if(*tok != RIGHTPARENTHESIS)
+	}
+	if(*tok != RIGHTPARENTHESIS) {
+		printf("\n--- While ---\n");
 		return FALSE;
+	}
 
 	getNextToken(tok, val, NULL);
 	switch(*tok) {
@@ -397,6 +432,7 @@ int While(int *tok, int *val) {
 			break;
 	}
 
+	printf("\n--- While ---\n");
 	return acc;
 }
 
@@ -408,6 +444,7 @@ int While(int *tok, int *val) {
 int Call(int *tok, int *val) {
 	int acc;
 
+	printf("+++ Call +++\n");
 	switch(*tok) {
 		case LEFTPARENTHESIS:
 			getNextToken(tok, val, NULL);
@@ -433,6 +470,7 @@ int Call(int *tok, int *val) {
 			break;
 	}
 
+	printf("\n--- Call ---\n");
 	return acc;
 }
 
@@ -443,6 +481,7 @@ int Call(int *tok, int *val) {
 int Optexpr(int *tok, int *val) {
 	int acc;
 
+	printf("+++ Optexpr +++\n");
 	switch(*tok) {
 		case COMMA:
 			getNextToken(tok, val, NULL);
@@ -453,6 +492,7 @@ int Optexpr(int *tok, int *val) {
 			break;
 	}
 
+	printf("\n--- Optexpr ---\n");
 	return acc;
 }
 
@@ -462,11 +502,13 @@ int Optexpr(int *tok, int *val) {
 int Expr(int *tok, int *val) {
 	int acc;
 
+	printf("+++ Expr +++\n");
 	if(Term(tok, val))
 		acc = Exprs(tok, val);
 	else
 		acc = FALSE;
 
+	printf("\n--- Expr ---\n");
 	return acc;
 }
 
@@ -477,6 +519,7 @@ int Expr(int *tok, int *val) {
 int Exprs(int *tok, int *val) {
 	int acc;
 
+	printf("+++ Exprs +++\n");
 	if(*tok == RELATIONOP) {
 		getNextToken(tok, val, NULL);
 		if(Term(tok, val))
@@ -487,6 +530,7 @@ int Exprs(int *tok, int *val) {
 	else
 		acc = TRUE;
 
+	printf("\n--- Exprs ---\n");
 	return acc;
 }
 
@@ -496,11 +540,13 @@ int Exprs(int *tok, int *val) {
 int Term(int *tok, int *val) {
 	int acc;
 
+	printf("+++ Term +++\n");
 	if(Factor(tok, val))
 		acc = Terms(tok, val);
 	else
 		acc = FALSE;
 
+	printf("\n--- Term ---\n");
 	return acc;
 }
 
@@ -512,6 +558,7 @@ int Term(int *tok, int *val) {
 int Terms(int *tok, int *val) {
 	int acc;
 
+	printf("+++ Terms +++\n");
 	switch(*tok) {
 		case PLUSOP:
 			getNextToken(tok, val, NULL);
@@ -532,6 +579,7 @@ int Terms(int *tok, int *val) {
 			break;
 	}
 
+	printf("\n--- Terms ---\n");
 	return acc;
 }
 
@@ -541,11 +589,13 @@ int Terms(int *tok, int *val) {
 int Factor(int *tok, int *val) {
 	int acc;
 
+	printf("+++ Factor +++\n");
 	if(!Fac(tok, val))
 		acc = FALSE;
 	else
 		acc = Factors(tok, val);
 
+	printf("\n--- Factors ---\n");
 	return acc;
 }
 
@@ -557,6 +607,7 @@ int Factor(int *tok, int *val) {
 int Factors(int *tok, int *val) {
 	int acc;
 
+	printf("+++ Factors +++\n");
 	switch(*tok) {
 		case MULTOP:
 			getNextToken(tok, val, NULL);
@@ -577,6 +628,7 @@ int Factors(int *tok, int *val) {
 			break;
 	}
 
+	printf("\n--- Factors ---\n");
 	return acc;
 }
 
@@ -589,6 +641,7 @@ int Factors(int *tok, int *val) {
 int Fac(int *tok, int *val) {
 	int acc;
 
+	printf("+++ Fac +++\n");
 	switch(*tok) {
 		case NOTOP:
 			getNextToken(tok, val, NULL);
@@ -618,6 +671,7 @@ int Fac(int *tok, int *val) {
 			break;
 	}
 
+	printf("\n--- fac ---\n");
 	return acc;
 }
 
