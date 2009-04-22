@@ -5,6 +5,7 @@
  */
 #include "scanner.h"
 
+	static int lineno = 1;
 /**
  * Check if the char is a letter
  */
@@ -110,16 +111,10 @@ void IdMatch(char * buf, int * ppos){
 }
 
 int getLineNo(void){
-	int ret = -42;
-	char * tmp;
-	int t;
-	printf("gettinglineno\n");
-	getNextToken(&t, &ret, tmp);
-	return ret;
+	return lineno;
 }
 
 void getNextToken (int *token, int *value, char * str){
-	static int lineno = 1;
 	int pos;
 	int match = FALSE;
 	int flag = FALSE;
@@ -127,10 +122,6 @@ void getNextToken (int *token, int *value, char * str){
 	char * buf = (char *)malloc(sizeof(char)*64);
 	FILE * fp = globalFile(SCAN_GET, "");
 	strncpy(str, "", 64);
-	if((*value) == -42){
-		(*value) = lineno;
-		return;
-	}
 	while(!match){
 		c = readNext(fp);
 		if(c == '\n'){
