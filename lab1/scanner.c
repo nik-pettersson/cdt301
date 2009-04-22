@@ -345,6 +345,88 @@ void getNextToken (int *token, int *value, char * str){
 			}
 		}
 	}
+	// DEBUGGING PRINT
+	printToken(*token);
 	free(buf);
 	return;
+}
+
+void printToken(int tok) {
+	switch(tok) {
+		case RETURN:
+			printf("RETURN");
+			break;
+		case IF:
+			printf("IF");
+			break;
+		case WHILE:
+			printf("WHILE");
+			break;
+		case WRITE:
+			printf("WRITE");
+			break;
+		case READ:
+			printf("READ");
+			break;
+		case ELSE:
+			printf("ELSE");
+			break;
+		case VOID:
+			printf("VOID");
+			break;
+		case INT:
+			printf("INT");
+			break;
+		case LEFTBRACE:
+			printf("LEFTBRACE");
+			break;
+		case RIGHTBRACE:
+			printf("RIGHTBRACE");
+			break;
+		case LEFTPARENTHESIS:
+			printf("LEFTPARENTHESIS");
+			break;
+		case RIGHTPARENTHESIS:
+			printf("RIGHTPARENTHESIS");
+			break;
+		case SEMICOLON:
+			printf("SEMICOLON");
+			break;
+		case COMMA:
+			printf("COMMA");
+			break;
+		case ASSIGNOP:
+			printf("ASSIGNOP");
+			break;
+		case PLUSOP:
+			printf("PLUSOP");
+			break;
+		case MINUSOP:
+			printf("MINUSOP");
+			break;
+		case MULTOP:
+			printf("MULTOP");
+			break;
+		case DIVOP:
+			printf("DIVOP");
+			break;
+		case NOTOP:
+			printf("NOTOP");
+			break;
+		case RELATIONOP:
+			printf("RElATIONOP");
+			break;
+		case ID:
+			printf("ID");
+			break;
+		case NUM:
+			printf("NUM");
+			break;
+		case ERROR:
+			printf("ERROR");
+			break;
+		case END:
+			printf("\n***END***");
+			break;
+	}
 }

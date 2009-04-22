@@ -1,27 +1,11 @@
-int nextToken(int *token, int *value) {
-	getNextToken(token, value, NULL);
-	if(*token == ERROR)
-		return FALSE;
-	return TRUE;
-}
-
-int matchNextToken(int token) {
-	int tok, val, ret;
-
-	if(nextToken(&tok, &val, NULL)) {
-		if(tok == token) {
-			return TRUE;
-		}
-	}
-
-	return FALSE;
-}
+#include "parser.h"
 
 /*
  * prog		->	func funclst
  */
 int Prog(int *tok, int *val) {
 	int acc;
+
 	getNextToken(tok, val, NULL);
 	if(Func(tok, val)) {
 		acc = Funclst(tok, val);
@@ -204,7 +188,7 @@ int Decl(int *tok, int *val) {
 					acc = Decl(tok, val);
 				}
 				else {
-					acc = FALSE
+					acc = FALSE;
 				}
 			}
 			else {
@@ -230,7 +214,7 @@ int Decls(int *tok, int *val) {
 		case COMMA:
 			getNextToken(tok, val, NULL);
 			if(*tok == INT) {
-				getNextToken(tok, val);
+				getNextToken(tok, val, NULL);
 				if(*tok == ID) {
 					getNextToken(tok, val, NULL);
 					acc = Decls(tok, val);
@@ -537,7 +521,7 @@ int Terms(int *tok, int *val) {
 				acc = FALSE;
 			break;
 		case MINUSOP:
-			getNextTOken(tok, val, NULL);
+			getNextToken(tok, val, NULL);
 			if(Factor(tok, val))
 				acc = Terms(tok, val);
 			else
@@ -555,7 +539,14 @@ int Terms(int *tok, int *val) {
  * factor	->	fac	factors
  */
 int Factor(int *tok, int *val) {
-	return 0;
+	int acc;
+
+	if(!Fac(tok, val))
+		acc = FALSE;
+	else
+		acc = Factors(tok, val);
+
+	return acc;
 }
 
 /*
@@ -564,16 +555,69 @@ int Factor(int *tok, int *val) {
  *					|		e
  */
 int Factors(int *tok, int *val) {
-	return 0;
+	int acc;
+
+	switch(*tok) {
+		case MULTOP:
+			getNextToken(tok, val, NULL);
+			if(!Fac(tok, val))
+				acc = FALSE;
+			else
+				acc = Factors(tok, val);
+			break;
+		case DIVOP:
+			getNextToken(tok, val, NULL);
+			if(!Fac(tok, val))
+					acc = FALSE;
+			else
+				acc = Factors(tok, val);
+			break;
+		default:
+			acc = TRUE;
+			break;
+	}
+
+	return acc;
 }
 
 /*
  * fac	->	! fac
- *			|		call
+ *			|		ID call
  *			|		NUM
  *			|		( expr )
  */
 int Fac(int *tok, int *val) {
-	return 0;
+	int acc;
+
+	switch(*tok) {
+		case NOTOP:
+			getNextToken(tok, val, NULL);
+			acc = Fac(tok, val);
+			break;
+		case ID:
+			getNextToken(tok, val, NULL);
+			acc = Call(tok, val);
+			break;
+		case NUM:
+			getNextToken(tok, val, NULL);
+			acc = TRUE;
+			break;
+		case LEFTPARENTHESIS:
+			getNextToken(tok, val, NULL);
+			if(!Expr(tok, val))
+				acc = FALSE;
+			else if(*tok == RIGHTPARENTHESIS) {
+				getNextToken(tok, val, NULL);
+				acc = TRUE;
+			}
+			else
+				acc = FALSE;
+			break;
+		default:
+			acc = FALSE;
+			break;
+	}
+
+	return acc;
 }
 
