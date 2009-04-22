@@ -47,5 +47,6 @@
 
 
 FILE * globalFile(int cmd, char * file);
+int getLineNo(void);
 void getNextToken (int *token, int *value, char * str);
 #endif

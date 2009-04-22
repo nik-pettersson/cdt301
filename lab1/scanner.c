@@ -109,6 +109,15 @@ void IdMatch(char * buf, int * ppos){
 	*ppos = pos;
 }
 
+int getLineNo(void){
+	int ret = -42;
+	char * tmp;
+	int t;
+	printf("gettinglineno\n");
+	getNextToken(&t, &ret, tmp);
+	return ret;
+}
+
 void getNextToken (int *token, int *value, char * str){
 	static int lineno = 1;
 	int pos;
@@ -118,6 +127,10 @@ void getNextToken (int *token, int *value, char * str){
 	char * buf = (char *)malloc(sizeof(char)*64);
 	FILE * fp = globalFile(SCAN_GET, "");
 	strncpy(str, "", 64);
+	if((*value) == -42){
+		(*value) = lineno;
+		return;
+	}
 	while(!match){
 		c = readNext(fp);
 		if(c == '\n'){
