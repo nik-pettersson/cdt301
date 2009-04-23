@@ -2,7 +2,7 @@
 /*
  * prog		->	func funclst
  */
-int Prog(int *tok, int *val);
+int Prog(char *filename);
 
 /*
  * funclst	->	func funclst

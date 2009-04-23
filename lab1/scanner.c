@@ -115,13 +115,13 @@ int getLineNo(void){
 }
 
 void getNextToken (int *token, int *value, char * str){
-	int pos;
+	int pos = 0;
 	int match = FALSE;
 	int flag = FALSE;
 	char c;
 	char * buf = (char *)malloc(sizeof(char)*64);
 	FILE * fp = globalFile(SCAN_GET, "");
-	strncpy(str, "", 64);
+	
 	while(!match){
 		c = readNext(fp);
 		if(c == '\n'){
@@ -339,82 +339,84 @@ void getNextToken (int *token, int *value, char * str){
 	// DEBUGGING PRINT
 	printToken(*token);
 	free(buf);
+	printf("POS %d\n", pos);
+	str[pos+1] = '\0';
 	return;
 }
 
 void printToken(int tok) {
 	switch(tok) {
 		case RETURN:
-			printf("RETURN");
+			printf("RETURN\n");
 			break;
 		case IF:
-			printf("IF");
+			printf("IF\n");
 			break;
 		case WHILE:
-			printf("WHILE");
+			printf("WHILE\n");
 			break;
 		case WRITE:
-			printf("WRITE");
+			printf("WRITE\n");
 			break;
 		case READ:
-			printf("READ");
+			printf("READ\n");
 			break;
 		case ELSE:
-			printf("ELSE");
+			printf("ELSE\n");
 			break;
 		case VOID:
-			printf("VOID");
+			printf("VOID\n");
 			break;
 		case INT:
-			printf("INT");
+			printf("INT\n");
 			break;
 		case LEFTBRACE:
-			printf("LEFTBRACE");
+			printf("LEFTBRACE\n");
 			break;
 		case RIGHTBRACE:
-			printf("RIGHTBRACE");
+			printf("RIGHTBRACE\n");
 			break;
 		case LEFTPARENTHESIS:
-			printf("LEFTPARENTHESIS");
+			printf("LEFTPARENTHESIS\n");
 			break;
 		case RIGHTPARENTHESIS:
-			printf("RIGHTPARENTHESIS");
+			printf("RIGHTPARENTHESIS\n");
 			break;
 		case SEMICOLON:
-			printf("SEMICOLON");
+			printf("SEMICOLON\n");
 			break;
 		case COMMA:
-			printf("COMMA");
+			printf("COMMA\n");
 			break;
 		case ASSIGNOP:
-			printf("ASSIGNOP");
+			printf("ASSIGNOP\n");
 			break;
 		case PLUSOP:
-			printf("PLUSOP");
+			printf("PLUSOP\n");
 			break;
 		case MINUSOP:
-			printf("MINUSOP");
+			printf("MINUSOP\n");
 			break;
 		case MULTOP:
-			printf("MULTOP");
+			printf("MULTOP\n");
 			break;
 		case DIVOP:
-			printf("DIVOP");
+			printf("DIVOP\n");
 			break;
 		case NOTOP:
-			printf("NOTOP");
+			printf("NOTOP\n");
 			break;
 		case RELATIONOP:
-			printf("RElATIONOP");
+			printf("RElATIONOP\n");
 			break;
 		case ID:
-			printf("ID");
+			printf("ID\n");
 			break;
 		case NUM:
-			printf("NUM");
+			printf("NUM\n");
 			break;
 		case ERROR:
-			printf("ERROR");
+			printf("ERROR\n");
 			break;
 		case END:
 			printf("\n***END***");

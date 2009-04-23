@@ -1,18 +1,4 @@
-int fac (int i)
-{
-   if (i <= 1)
-      return 1;
-   else
-      return (i * fac (i - 1));
-}
-
-void trac42 (void)
-{
-   int x,y,z;
-
-   read x;
-   while (!(x == 0)) {
-      write (fac (x) / 2);
-      x = x - 2;
-   }
+void f(void) {
+	if(g(h(13),h(42), x))
+		write b;
 }

@@ -1,16 +1,27 @@
 #include "parser.h"
-
+char gstring[64], gassign[64];
+FILE *gfile = NULL;
+int glabel = 0;
 /*
  * prog		->	func funclst
  */
-int Prog(int *tok, int *val) {
+int Prog(char *filename) {
 	int acc;
-	printf("+++ Prog +++\n");
-	getNextToken(tok, val, NULL);
-	if(Func(tok, val)) {
-		acc = Funclst(tok, val);
+	int tok, val;
+
+	if(filename == NULL) {
+		return -1;
 	}
-	printf("\n--- Prog ---\n");
+
+	gfile = fopen(filename, "w");
+
+	printf("+++ Prog +++\n");
+	getNextToken(&tok, &val, gstring);
+	if((acc = Func(&tok, &val))) {
+		acc = Funclst(&tok, &val);
+	}
+	printf("\n--- Prog (%d) ---\n", acc  );
+	fclose(gfile);
 	return acc;
 }
 
@@ -27,10 +38,9 @@ int Funclst(int *tok, int *val) {
 			acc = TRUE;
 			break;
 		default:
-			getNextToken(tok, val, NULL);
 			acc = Func(tok, val);
 	}
-	printf("\n--- Funclst ---\n");
+	printf("\n--- Funclst (%d) ---\n", acc  );
 	return acc;
 }
 
@@ -44,9 +54,10 @@ int Func(int *tok, int *val) {
 	if(Type(tok, val)) {
 		switch(*tok) {
 			case ID:
-				getNextToken(tok, val, NULL);
+				fprintf(gfile, "label %s\n", gstring);
+				getNextToken(tok, val, gstring);
 				if(*tok == LEFTPARENTHESIS) {
-					getNextToken(tok, val, NULL);
+					getNextToken(tok, val, gstring);
 					if(Params(tok, val)) {
 						acc = Body(tok, val);
 					}
@@ -64,7 +75,8 @@ int Func(int *tok, int *val) {
 		}
 	}
 
-	printf("\n--- Func ---\n");
+	fprintf(gfile, "return\n");
+	printf("\n--- Func (%d) ---\n", acc  );
 	return acc;
 }
 
@@ -78,19 +90,19 @@ int Params(int *tok, int *val) {
 	printf("+++ Params +++\n");
 	switch(*tok) {
 		case VOID:
-			getNextToken(tok, val, NULL);
+			getNextToken(tok, val, gstring);
 			if(*tok == RIGHTPARENTHESIS) {
 				acc = TRUE;
-				getNextToken(tok, val, NULL);
+				getNextToken(tok, val, gstring);
 			}
 			else {
 				acc = FALSE;
 			}
 			break;
 		case INT:
-			getNextToken(tok, val, NULL);
+			getNextToken(tok, val, gstring);
 			if(*tok == ID) {
-				getNextToken(tok, val, NULL);
+				getNextToken(tok, val, gstring);
 				acc = Optparams(tok, val);
 			}
 			break;
@@ -99,7 +111,7 @@ int Params(int *tok, int *val) {
 			break;
 	}
 
-	printf("\n--- Params ---\n");
+	printf("\n--- Params (%d) ---\n", acc  );
 	return acc;
 }
 
@@ -114,14 +126,14 @@ int Optparams(int *tok, int *val) {
 	switch(*tok) {
 		case RIGHTPARENTHESIS:
 			acc = TRUE;
-			getNextToken(tok, val, NULL);
+			getNextToken(tok, val, gstring);
 			break;
 		case COMMA:
-			getNextToken(tok, val, NULL);
+			getNextToken(tok, val, gstring);
 			if(*tok == INT) {
-				getNextToken(tok, val, NULL);
+				getNextToken(tok, val, gstring);
 				if(*tok == ID) {
-					getNextToken(tok, val, NULL);
+					getNextToken(tok, val, gstring);
 					Optparams(tok, val);
 				}
 				else {
@@ -137,7 +149,7 @@ int Optparams(int *tok, int *val) {
 			break;
 	}
 
-	printf("\n--- Optparams ---\n");
+	printf("\n--- Optparams (%d) ---\n", acc  );
 	return acc;
 }
 
@@ -153,13 +165,14 @@ int Type(int *tok, int *val) {
 	switch(*tok) {
 		case VOID:
 		case INT:
+			getNextToken(tok, val, gstring);
 			acc = TRUE;
 			break;
 		default:
 			acc = FALSE;
 			break;
 	}
-	printf("\n--- Type ---\n");
+	printf("\n--- Type (%d) ---\n", acc  );
 	return acc;
 }
 
@@ -172,7 +185,7 @@ int Body(int *tok, int *val) {
 	printf("+++ Body +++\n");
 	switch(*tok) {
 		case LEFTBRACE:
-			getNextToken(tok, val, NULL);
+			getNextToken(tok, val, gstring);
 			if(Decl(tok, val)) {
 				acc = Stmts(tok, val);
 			}
@@ -182,7 +195,7 @@ int Body(int *tok, int *val) {
 			break;
 	}
 
-	printf("\n--- Body ---\n");
+	printf("\n--- Body (%d) ---\n", acc  );
 	return acc;
 }
 
@@ -196,9 +209,10 @@ int Decl(int *tok, int *val) {
 	printf("+++ Decl +++\n");
 	switch(*tok) {
 		case INT:
-			getNextToken(tok, val, NULL);
+			getNextToken(tok, val, gstring);
 			if(*tok == ID) {
-				getNextToken(tok, val, NULL);
+				fprintf(gfile, "declare %s\n", gstring);
+				getNextToken(tok, val, gstring);
 				if(Decls(tok, val)) {
 					acc = Decl(tok, val);
 				}
@@ -215,12 +229,12 @@ int Decl(int *tok, int *val) {
 			break;
 	}
 
-	printf("\n--- Decl ---\n");
+	printf("\n--- Decl (%d) ---\n", acc  );
 	return acc;
 }
 
 /*
- * decls	->	, INT ID decls
+ * decls	->	, ID decls
  * 				|		;
  */
 int Decls(int *tok, int *val) {
@@ -229,22 +243,18 @@ int Decls(int *tok, int *val) {
 	printf("+++ Decls +++\n");
 	switch(*tok) {
 		case COMMA:
-			getNextToken(tok, val, NULL);
-			if(*tok == INT) {
-				getNextToken(tok, val, NULL);
-				if(*tok == ID) {
-					getNextToken(tok, val, NULL);
-					acc = Decls(tok, val);
-				}
-				else {
-					acc = FALSE;
-				}
+			getNextToken(tok, val, gstring);
+			if(*tok == ID) {
+				fprintf(gfile, "declare %s\n", gstring);
+				getNextToken(tok, val, gstring);
+				acc = Decls(tok, val);
 			}
 			else {
 				acc = FALSE;
 			}
 			break;
 		case SEMICOLON:
+			getNextToken(tok, val, gstring);
 			acc = TRUE;
 			break;
 		default:
@@ -252,7 +262,7 @@ int Decls(int *tok, int *val) {
 			break;
 	}
 
-	printf("\n--- Decls ---\n");
+	printf("\n--- Decls (%d) ---\n", acc  );
 	return acc;
 }
 
@@ -267,7 +277,7 @@ int Stmts(int *tok, int *val) {
 	if(Stmt(tok, val)) {
 		switch(*tok) {
 			case RIGHTBRACE:
-				getNextToken(tok, val, NULL);
+				getNextToken(tok, val, gstring);
 				acc = TRUE;
 				break;
 			default:
@@ -279,7 +289,7 @@ int Stmts(int *tok, int *val) {
 		acc = FALSE;
 	}
 
-	printf("\n--- Stmts ---\n");
+	printf("\n--- Stmts (%d) ---\n", acc  );
 	return acc;
 }
 
@@ -293,44 +303,93 @@ int Stmts(int *tok, int *val) {
  */
 int Stmt(int *tok, int *val) {
 	int acc;
+	char tmp[64];
 
 	printf("+++ Stmt +++\n");
 	// Consume the first token for the corresponding rules.
 	// This results in a slight deviation from the grammar.
 	switch(*tok) {
 		case IF:
-			getNextToken(tok, val, NULL);
+			getNextToken(tok, val, gstring);
 			acc = If(tok, val);
 			break;
 		case WHILE:
-			getNextToken(tok, val, NULL);
+			getNextToken(tok, val, gstring);
 			acc = While(tok, val);
 			break;
 		case WRITE:
-			getNextToken(tok, val, NULL);
-			acc = Expr(tok, val);
-			break;
-		case READ:
-			getNextToken(tok, val, NULL);
-			if(*tok == ID) {
-				getNextToken(tok, val, NULL);
+			getNextToken(tok, val, gstring);
+			if(!Expr(tok, val))
+				acc = FALSE;
+			else if(*tok != SEMICOLON) {
+				acc = FALSE;
+			}
+			else {
+				fprintf(gfile, "write\n");
+				fprintf(gfile, "pop\n");
+				getNextToken(tok, val, gstring);
 				acc = TRUE;
 			}
 			break;
+		case READ:
+			getNextToken(tok, val, gstring);
+			if(*tok == ID) {
+				fprintf(gfile, "lvalue %s\n", gstring);
+				fprintf(gfile, "read\n");
+				fprintf(gfile, ":=\n");
+				getNextToken(tok, val, gstring);
+				if(*tok != SEMICOLON)
+					acc = FALSE;
+				else {
+					getNextToken(tok, val, gstring);
+					acc = TRUE;
+				}
+			}
+			break;
 		case RETURN:
-			getNextToken(tok, val, NULL);
-			acc = Expr(tok, val);
+			fprintf(gfile, "lvalue RET_VAL_PLACE\n");
+			getNextToken(tok, val, gstring);
+			if(!Expr(tok, val)) {
+				printf("NOT VALID EXPR¿\n");
+				acc = FALSE;
+			}
+			else if(*tok != SEMICOLON) {
+				printf("COULD NOT MATCH SEMICOLON\n");
+				acc = FALSE;
+			}
+			else {
+				fprintf(gfile, ":=\n");
+				fprintf(gfile, "return\n");
+				getNextToken(tok, val, gstring);
+				acc = TRUE;
+			}
 			break;
 		case ID:
-			getNextToken(tok, val, NULL);
+			strncpy(tmp, gstring, 64);
+			strncpy(gassign, gstring, 64);
+			getNextToken(tok, val, gstring);
 			acc = Call(tok, val);
+			if(!acc) {
+				acc = FALSE;
+			}
+			else if(*tok != SEMICOLON) {
+				acc = FALSE;
+			}
+			else {
+				if(acc == 2) // hotfix to determine 'assign' or 'call'
+					fprintf(gfile, ":=\n");
+				else
+					fprintf(gfile, "call %s\n", tmp);
+				getNextToken(tok, val, gstring);
+				acc = TRUE;
+			}
 			break;
 		default:
 			acc = FALSE;
 			break;
 	}
 
-	printf("\n--- Stmt ---\n");
+	printf("\n--- Stmt (%d) ---\n", acc  );
 	return acc;
 }
 
@@ -340,32 +399,43 @@ int Stmt(int *tok, int *val) {
  */
 int If(int *tok, int *val) {
 	int acc;
+	int label;
+
+	glabel += 2;
+	label = glabel;
 
 	printf("+++ If +++\n");
 	if(*tok != LEFTPARENTHESIS)
 		return FALSE;
-	getNextToken(tok, val, NULL);
+	getNextToken(tok, val, gstring);
 	if(!Expr(tok, val))
 		return FALSE;
 	if(*tok != RIGHTPARENTHESIS)
 		return FALSE;
 	
-	getNextToken(tok, val, NULL);
+	getNextToken(tok, val, gstring);
+	fprintf(gfile, "gofalse L%d\n", label-1);
 	switch(*tok) {
 		case LEFTBRACE:
-			getNextToken(tok, val, NULL);
+			getNextToken(tok, val, gstring);
 			if(!Stmts(tok, val))
 				return FALSE;
+			fprintf(gfile, "goto L%d\n", label);
+			fprintf(gfile, "label L%d\n", label-1);
 			acc = Else(tok, val);
+			fprintf(gfile, "label L%d\n", label);
 			break;
 		default:
 			if(!Stmt(tok, val))
 				return FALSE;
+			fprintf(gfile, "goto L%d\n", label);
+			fprintf(gfile, "label L%d\n", label-1);
 			acc = Else(tok, val);
+			fprintf(gfile, "label L%d\n", label);
 			break;
 	}
 
-	printf("\n--- If ---\n");
+	printf("\n--- If (%d) ---\n", acc  );
 	return acc;
 }
 
@@ -379,14 +449,14 @@ int Else(int *tok, int *val) {
 
 	printf("+++ Else +++\n");
 	if(*tok != ELSE) {
-		printf("\n--- Else ---\n");
+		printf("\n--- Else (%d) ---\n", acc  );
 		return TRUE;
 	}
 
-	getNextToken(tok, val, NULL);
+	getNextToken(tok, val, gstring);
 	switch(*tok) {
 		case LEFTBRACE:
-			getNextToken(tok, val, NULL);
+			getNextToken(tok, val, gstring);
 			acc = Stmts(tok, val);
 			break;
 		default:
@@ -394,7 +464,7 @@ int Else(int *tok, int *val) {
 			break;
 	}
 
-	printf("\n--- Else ---\n");
+	printf("\n--- Else (%d) ---\n", acc  );
 	return acc;
 }
 
@@ -404,35 +474,45 @@ int Else(int *tok, int *val) {
  */
 int While(int *tok, int *val) {
 	int acc;
+	int label;
+
+	glabel += 2;
+	label = glabel;
 
 	printf("+++ While +++\n");
 	if(*tok != LEFTPARENTHESIS) {
-		printf("\n--- While ---\n");
+		printf("\n--- While (%d) ---\n", acc  );
 		return FALSE;
 	}
 
-	getNextToken(tok, val, NULL);
+	fprintf(gfile, "label L%d\n", label-1);
+	getNextToken(tok, val, gstring);
 	if(!Expr(tok, val)) {
-		printf("\n--- While ---\n");
+		printf("\n--- While (%d) ---\n", acc  );
 		return FALSE;
 	}
 	if(*tok != RIGHTPARENTHESIS) {
-		printf("\n--- While ---\n");
+		printf("\n--- While (%d) ---\n", acc  );
 		return FALSE;
 	}
 
-	getNextToken(tok, val, NULL);
+	fprintf(gfile, "gofalse L%d\n", label);
+	getNextToken(tok, val, gstring);
 	switch(*tok) {
 		case LEFTBRACE:
-			getNextToken(tok, val, NULL);
+			getNextToken(tok, val, gstring);
 			acc = Stmts(tok, val);
+			fprintf(gfile, "goto L%d\n", label-1);
+			fprintf(gfile, "label L%d\n", label);
 			break;
 		default:
 			acc = Stmt(tok, val);
+			fprintf(gfile, "goto L%d\n", label-1);
+			fprintf(gfile, "label L%d\n", label);
 			break;
 	}
 
-	printf("\n--- While ---\n");
+	printf("\n--- While (%d) ---\n", acc  );
 	return acc;
 }
 
@@ -447,52 +527,75 @@ int Call(int *tok, int *val) {
 	printf("+++ Call +++\n");
 	switch(*tok) {
 		case LEFTPARENTHESIS:
-			getNextToken(tok, val, NULL);
+			fprintf(gfile, "push 0\n");
+			getNextToken(tok, val, gstring);
 			switch(*tok) {
 				case RIGHTPARENTHESIS:
-					getNextToken(tok, val, NULL);
+					getNextToken(tok, val, gstring);
 					acc = TRUE;
 					break;
 				default:
-					if(!Expr(tok, val))
+					if(!Expr(tok, val)) {
 						acc = FALSE;
-					else 
-						acc = Optexpr(tok, val);
+					}
+					else {
+						if(!(acc = Optexpr(tok, val))) {
+							acc = FALSE;
+						}
+						else if(*tok != RIGHTPARENTHESIS) {
+							acc = FALSE;
+						}
+						else {
+							getNextToken(tok, val, gstring);
+						}
+						
+					}
 					break;
 			}
 			break;
 		case ASSIGNOP:
-			getNextToken(tok, val, NULL);
+			fprintf(gfile, "lvalue %s\n", gassign);
+			getNextToken(tok, val, gstring);
 			acc = Expr(tok, val);
+			if(acc)
+				acc = 2;
 			break;
 		default:
 			acc = FALSE;
 			break;
 	}
 
-	printf("\n--- Call ---\n");
+	printf("\n--- Call (%d) ---\n", acc  );
 	return acc;
 }
 
 /*
- * optexpr	->	, expr
+ * optexpr	->	, expr optexpr
  *					|		e
  */
 int Optexpr(int *tok, int *val) {
-	int acc;
+	int acc = 0;
 
 	printf("+++ Optexpr +++\n");
 	switch(*tok) {
 		case COMMA:
-			getNextToken(tok, val, NULL);
-			acc = Expr(tok, val);
+			getNextToken(tok, val, gstring);
+			if(!Expr(tok, val)) {
+				acc = FALSE;
+			}
+			else if ((acc = Optexpr(tok, val)) == FALSE){
+				acc = FALSE;
+			}
+			else {
+				acc++;
+			}
 			break;
 		default:
 			acc = TRUE;
 			break;
 	}
 
-	printf("\n--- Optexpr ---\n");
+	printf("\n--- Optexpr (%d) ---\n", acc  );
 	return acc;
 }
 
@@ -508,7 +611,7 @@ int Expr(int *tok, int *val) {
 	else
 		acc = FALSE;
 
-	printf("\n--- Expr ---\n");
+	printf("\n--- Expr (%d) ---\n", acc  );
 	return acc;
 }
 
@@ -518,19 +621,36 @@ int Expr(int *tok, int *val) {
  */
 int Exprs(int *tok, int *val) {
 	int acc;
+	int op;
 
 	printf("+++ Exprs +++\n");
 	if(*tok == RELATIONOP) {
-		getNextToken(tok, val, NULL);
-		if(Term(tok, val))
+		op = *val;
+		getNextToken(tok, val, gstring);
+		if(Term(tok, val)) {
 			acc = Exprs(tok, val);
+			switch(op) {
+				case EQUAL:
+					fprintf(gfile, "==\n");
+					break;
+				case BIGGER:
+					fprintf(gfile, ">=\n");
+					break;
+				case SMALLER:
+					fprintf(gfile, "<=\n");
+					break;
+				case NOTEQUAL:
+					fprintf(gfile, "!=\n");
+					break;
+			}
+		}
 		else
 			acc = FALSE;
 	}
 	else
 		acc = TRUE;
 
-	printf("\n--- Exprs ---\n");
+	printf("\n--- Exprs (%d) ---\n", acc  );
 	return acc;
 }
 
@@ -546,7 +666,7 @@ int Term(int *tok, int *val) {
 	else
 		acc = FALSE;
 
-	printf("\n--- Term ---\n");
+	printf("\n--- Term (%d) ---\n", acc  );
 	return acc;
 }
 
@@ -561,16 +681,20 @@ int Terms(int *tok, int *val) {
 	printf("+++ Terms +++\n");
 	switch(*tok) {
 		case PLUSOP:
-			getNextToken(tok, val, NULL);
-			if(Factor(tok, val))
+			getNextToken(tok, val, gstring);
+			if(Factor(tok, val)) {
 				acc = Terms(tok, val);
+				fprintf(gfile, "+\n");
+			}
 			else
 				acc = FALSE;
 			break;
 		case MINUSOP:
-			getNextToken(tok, val, NULL);
-			if(Factor(tok, val))
+			getNextToken(tok, val, gstring);
+			if(Factor(tok, val)) {
 				acc = Terms(tok, val);
+				fprintf(gfile, "-\n");
+			}
 			else
 				acc = FALSE;
 			break;
@@ -579,7 +703,7 @@ int Terms(int *tok, int *val) {
 			break;
 	}
 
-	printf("\n--- Terms ---\n");
+	printf("\n--- Terms (%d) ---\n", acc  );
 	return acc;
 }
 
@@ -595,7 +719,7 @@ int Factor(int *tok, int *val) {
 	else
 		acc = Factors(tok, val);
 
-	printf("\n--- Factors ---\n");
+	printf("\n--- Factors (%d) ---\n", acc  );
 	return acc;
 }
 
@@ -610,25 +734,29 @@ int Factors(int *tok, int *val) {
 	printf("+++ Factors +++\n");
 	switch(*tok) {
 		case MULTOP:
-			getNextToken(tok, val, NULL);
+			getNextToken(tok, val, gstring);
 			if(!Fac(tok, val))
 				acc = FALSE;
-			else
+			else {
 				acc = Factors(tok, val);
+				fprintf(gfile, "*\n");
+			}
 			break;
 		case DIVOP:
-			getNextToken(tok, val, NULL);
+			getNextToken(tok, val, gstring);
 			if(!Fac(tok, val))
 					acc = FALSE;
-			else
+			else {
 				acc = Factors(tok, val);
+				fprintf(gfile, "/\n");
+			}
 			break;
 		default:
 			acc = TRUE;
 			break;
 	}
 
-	printf("\n--- Factors ---\n");
+	printf("\n--- Factors (%d) ---\n", acc  );
 	return acc;
 }
 
@@ -640,27 +768,42 @@ int Factors(int *tok, int *val) {
  */
 int Fac(int *tok, int *val) {
 	int acc;
+	char tmp[64];
 
 	printf("+++ Fac +++\n");
 	switch(*tok) {
 		case NOTOP:
-			getNextToken(tok, val, NULL);
+			getNextToken(tok, val, gstring);
 			acc = Fac(tok, val);
+			fprintf(gfile, "not\n");
 			break;
 		case ID:
-			getNextToken(tok, val, NULL);
-			acc = Call(tok, val);
+			strncpy(tmp, gstring, 64);
+			getNextToken(tok, val, gstring);
+			if(*tok == LEFTPARENTHESIS || *tok == ASSIGNOP){
+				acc = Call(tok, val);
+				if(acc == 2) // hotfix to determine 'assign' or 'call'
+					fprintf(gfile, ":=\n");
+				else
+					fprintf(gfile, "call %s\n", tmp);
+					fprintf(gfile, "pop %d\n", acc);
+			}
+			else {
+				fprintf(gfile, "rvalue %s\n", tmp);
+				acc = TRUE;
+			}
 			break;
 		case NUM:
-			getNextToken(tok, val, NULL);
+			fprintf(gfile, "push %d\n", *val);
+			getNextToken(tok, val, gstring);
 			acc = TRUE;
 			break;
 		case LEFTPARENTHESIS:
-			getNextToken(tok, val, NULL);
+			getNextToken(tok, val, gstring);
 			if(!Expr(tok, val))
 				acc = FALSE;
 			else if(*tok == RIGHTPARENTHESIS) {
-				getNextToken(tok, val, NULL);
+				getNextToken(tok, val, gstring);
 				acc = TRUE;
 			}
 			else
@@ -671,7 +814,7 @@ int Fac(int *tok, int *val) {
 			break;
 	}
 
-	printf("\n--- fac ---\n");
+	printf("\n--- fac (%d) ---\n", acc  );
 	return acc;
 }
 
