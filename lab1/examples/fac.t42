@@ -1,3 +1,8 @@
+/*
+void (int x){
+	dostuff(10);
+}
+*/
 void f(void) {
 	if(g(h(13),h(42), x))
 		write b;

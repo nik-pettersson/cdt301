@@ -194,7 +194,7 @@ void getNextToken (int *token, int *value, char * str){
 							}
 						}
 						flag = FALSE;
-						match = TRUE;
+						match = FALSE;
 						break;
 					}
 					else{
