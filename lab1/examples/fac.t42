@@ -4,6 +4,5 @@ void (int x){
 }
 */
 void f(void) {
-	if(g(h(13),h(42), x))
-		write b;
+	g(h(1, 2), y, z);
 }

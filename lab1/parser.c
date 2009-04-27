@@ -1,7 +1,11 @@
 #include "parser.h"
+
+#define ACK_IDENT -2
+
 char gstring[64], gassign[64];
 FILE *gfile = NULL;
 int glabel = 0;
+
 /*
  * prog		->	func funclst
  */
@@ -376,10 +380,12 @@ int Stmt(int *tok, int *val) {
 				acc = FALSE;
 			}
 			else {
-				if(acc == 2) // hotfix to determine 'assign' or 'call'
+				if(acc == ACK_IDENT) // hotfix to determine 'assign' or 'call'
 					fprintf(gfile, ":=\n");
-				else
+				else {
 					fprintf(gfile, "call %s\n", tmp);
+					fprintf(gfile, "pop %d\n", acc);
+				}
 				getNextToken(tok, val, gstring);
 				acc = TRUE;
 			}
@@ -558,7 +564,7 @@ int Call(int *tok, int *val) {
 			getNextToken(tok, val, gstring);
 			acc = Expr(tok, val);
 			if(acc)
-				acc = 2;
+				acc = ACK_IDENT;
 			break;
 		default:
 			acc = FALSE;
@@ -782,7 +788,7 @@ int Fac(int *tok, int *val) {
 			getNextToken(tok, val, gstring);
 			if(*tok == LEFTPARENTHESIS || *tok == ASSIGNOP){
 				acc = Call(tok, val);
-				if(acc == 2) // hotfix to determine 'assign' or 'call'
+				if(acc == ACK_IDENT) // hotfix to determine 'assign' or 'call'
 					fprintf(gfile, ":=\n");
 				else
 					fprintf(gfile, "call %s\n", tmp);
