@@ -60,78 +60,78 @@ int yylex(void);
 
 %%
 
-program     : functions
+program     : functions {$$ = mProgram($1); printf("mProgram\n");}
             ;
 
-functions   : functions function
-            | function
+functions   : functions function {$$ = connectFunctions($1, $2); printf("connectFunctions\n");}
+            | function {$$ = $1; printf("\n");} 
             ;
 
-function    : BASIC_TYPE ID '(' formals ')' '{' decls stmnts '}' {$$ = NULL;}
+function    : BASIC_TYPE ID '(' formals ')' '{' decls stmnts '}' {$$ = mFunction(connectVariables($4, $7), $8, $2.strVal, $1.type, $2.lineNr); printf("%d %s at %d\n", $1.type, $2.strVal, $2.lineNr);}
             ;
 
-formals     : formals_non_emtpty
+formals     : formals_non_emtpty {$$ = $1;}
             | {$$ = NULL;}
             ;
 
-formals_non_emtpty : formals_non_emtpty ',' formal
-            | formal
+formals_non_emtpty : formals_non_emtpty ',' formal {$$ = connectVariables($1, $3);}
+            | formal {$$ = $1;}
             ;
 
-formal      : BASIC_TYPE ID {$$ = NULL;}
+formal      : BASIC_TYPE ID {$$ = mVariable(kFormal, $2.strVal, $1.type, $2.lineNr); printf("%d %s\n", $1.type, $2.strVal);}
             ;
 
-decls       : decls decl
+decls       : decls decl {$$ = connectVariables($1, $2);}
             | {$$ = NULL;}
             ;
 
-decl        : BASIC_TYPE idents ';'   {$$ = NULL;}
+decl        : BASIC_TYPE idents ';'   {$$ = addType($2, $1.type); }
             ;
 
-idents      : idents ',' ident
-            | ident
+idents      : idents ',' ident {$$ = connectVariables($1, $3);}
+            | ident {$$ = $1;}
             ;
 
-ident       : ID                      {$$ = NULL;}
+ident       : ID                      {$$ = mVariable(kLocal, $1.strVal, VOID, $1.lineNr); }
             ;
 
-stmnts      : stmnts stmnt
-            | stmnt
+stmnts      : stmnts stmnt { $$ = connectStmnts($1, $2);}
+            | stmnt {$$ = $1;}
             ;
 
-stmnt       : ID '=' expr ';'                       {$$ = NULL;}
-            | IF '(' expr ')' stmnt ELSE stmnt      {$$ = NULL;}
-            | IF '(' expr ')' stmnt                 {$$ = NULL;}
-            | WHILE '(' expr ')' stmnt              {$$ = NULL;}
-            | RETURN expr ';'                       {$$ = NULL;}
-            | READ ID ';'                           {$$ = NULL;}
-            | WRITE expr ';'                        {$$ = NULL;}
-            | '{' stmnts '}'                        {$$ = NULL;}
-            | ID '(' actuals ')' ';'                {$$ = NULL;}
+stmnt       : ID '=' expr ';'                       {$$ = mAssign($1.strVal, $3, $1.lineNr);}
+            | IF '(' expr ')' stmnt ELSE stmnt      {$$ = mIf($3, $5, $7, $1);}
+            | IF '(' expr ')' stmnt                 {$$ = mIf($3, $5, NULL, $1);}
+            | WHILE '(' expr ')' stmnt              {$$ = mWhile($3, $5, $1);}
+            | RETURN expr ';'                       {$$ = mReturn($2, $1);}
+            | READ ID ';'                           {$$ = mRead($2.strVal, $1);}
+            | WRITE expr ';'                        {$$ = mWrite($2, $1);}
+            | '{' stmnts '}'                        {$$ = $2;}
+            | ID '(' actuals ')' ';'                {$$ = mFuncCallStmnt($3, $1.strVal, $1.lineNr);}
             ;
 
-expr        : MINUSOP expr %prec UNOP {$$ = NULL;}
-            | NOTOP expr              {$$ = NULL;}
-            | expr PLUSOP expr
-            | expr MINUSOP expr
-            | expr MULOP expr
-            | expr ANDOP expr
-            | expr OROP expr
-            | expr RELOP expr
-            |'(' expr ')'             {$$ = NULL;}
-            | ID '(' actuals ')'      {$$ = NULL;}
-            | ID                      {$$ = NULL;}
-            | INT_CONST               {$$ = NULL;}
-            | BOOL_CONST              {$$ = NULL;}
-            | STRING_CONST            {$$ = NULL;}
+expr        : MINUSOP expr %prec UNOP {$$ = mUnary(NEG, $2, $1.lineNr);}
+            | NOTOP expr              {$$ = mUnary(NOT, $2, $1.lineNr);}
+            | expr PLUSOP expr				{$$ = mBinary($1, $2.opType, $3, $2.lineNr);}
+            | expr MINUSOP expr				{$$ = mBinary($1, $2.opType, $3, $2.lineNr);}
+            | expr MULOP expr					{$$ = mBinary($1, $2.opType, $3, $2.lineNr);}
+            | expr ANDOP expr					{$$ = mBinary($1, $2.opType, $3, $2.lineNr);}
+            | expr OROP expr					{$$ = mBinary($1, $2.opType, $3, $2.lineNr);}
+            | expr RELOP expr					{$$ = mBinary($1, $2.opType, $3, $2.lineNr);}
+            |'(' expr ')'             {$$ = $2;}
+            | ID '(' actuals ')'      {$$ = mFuncCallExpr($3, $1.strVal, $1.lineNr);}
+            | ID                      {$$ = mRValue($1.strVal, $1.lineNr);}
+            | INT_CONST               {$$ = mIntConst($1.intVal, $1.lineNr);}
+            | BOOL_CONST              {$$ = mBoolConst($1.intVal, $1.lineNr);}
+            | STRING_CONST            {$$ = mStringConst($1.strVal, $1.lineNr);}
             ;
 
-actuals     : exprs
+actuals     : exprs {$$ = $1;}
             | {$$ = NULL;}
             ;
 
-exprs       : exprs ',' expr
-            | expr
+exprs       : exprs ',' expr {$$ = connectActuals($1, $3);}
+            | expr	{$$ = mActual($1);}
             ;
 
 %%
