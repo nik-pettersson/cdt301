@@ -1,0 +1,14 @@
+/* $Id: t3.t42 15 2007-10-25 18:41:37Z csg $
+   Does everything print correct when you run this program? */
+void print(string s1, int x, string s2, int y)
+{
+   write s1;
+   write x;
+   write s2;
+   write y;
+}
+
+void trac42 ()
+{
+   print("A one follows below", 1, "A two follows below", 2);
+}

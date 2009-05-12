@@ -1,0 +1,27 @@
+/* $Id: debug.t42 15 2007-10-25 18:41:37Z csg $
+   What is this actually testing. Try to figure out what is a good test
+   case yourself. Maybe you just waste your time checking mine - different solutions you know. */
+int foo(int e, int g)
+{
+   int resultat, a, b;
+   bool isBig;
+   string kalle; /* That is a bad variable name. */
+
+   a = 4;
+   b = 3;
+   resultat = a * b * g;
+   if( !(resultat < 5) ) {
+      isBig = true;
+      kalle = "lkasda";
+   }
+   else {
+      isBig = false;
+      kalle = "lkadsfggda";
+   }
+   return resultat;
+}
+
+void trac42() {
+   int y;
+   y = foo(2, 5);
+}

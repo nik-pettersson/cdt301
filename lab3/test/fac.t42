@@ -1,0 +1,22 @@
+/* $Id: fac.t42 15 2007-10-25 18:41:37Z csg $
+   This is definitely a correct program but the generated code should not behave nice
+   when executing (if the user enters a negative value). */
+
+int fac (int x)
+{
+   if (x <= 1)
+      return 1;
+   else
+      return x * fac (x - 1);
+}
+
+void trac42 ()
+{
+   int x;
+
+   read x;
+   while (!(x == 0)) {
+      write fac(x);
+      x = x - 1;
+   }
+}

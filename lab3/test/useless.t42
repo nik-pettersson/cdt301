@@ -1,0 +1,6 @@
+/* $Id: useless.t42 15 2007-10-25 18:41:37Z csg $
+   Maybe a good starter... */
+void trac42 ()
+{
+x=5;
+}

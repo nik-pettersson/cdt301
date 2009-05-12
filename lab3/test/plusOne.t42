@@ -1,0 +1,37 @@
+/* $Id: plusOne.t42 15 2007-10-25 18:41:37Z csg $
+   Try this one */
+int plusOne(int x, bool what) {
+   int res;
+   int i;
+   bool hmm;
+
+   res = 5 + 1;
+   if (what) {
+      hmm = what;
+      if( res == (5 + 2) || !(res < 70) ) {
+         res = 77;
+      }
+      else {
+         if( res < 22 ) {
+            res = 99;
+         }
+         else {
+            res = 100;
+         }
+
+      }
+   }
+   else {
+      hmm = true;
+      res = 99;
+   }
+   i = 0;
+   while( i < 9 && hmm ) {
+      res = res + i;
+      i = i + 1;
+   }
+   return res * x;
+}
+void trac42() {
+   write plusOne(plusOne(3, false), true);
+}

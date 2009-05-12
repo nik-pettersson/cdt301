@@ -1,0 +1,46 @@
+/* $Id: testall.t42 15 2007-10-25 18:41:37Z csg $
+   Quite a lot */
+
+string foo(int x, bool yes, string str, int y)
+{
+   string ret;
+   int temp;
+
+   if( yes ) {
+      x = y * x - 2 * y + 10 / 2;
+      yes = false;
+      write "yes sire!";
+      ret = "yess";
+   }
+   if (x == y) {
+      x = y * 300;
+      write "x is equal y";
+      ret = "equality rocks";
+   }
+   else {
+      temp = x;
+      x = y;
+      y = temp;
+      ret = "x and y is not equal so i return this sentence.";
+   }
+
+   return ret;
+}
+void bar()
+{
+   string input;
+   string str;
+
+   write "Write something!";
+   read input;
+
+   str = foo(3, true, "tjong", 3);
+   write str;
+   str = foo(33, false, "tjong2", 3);
+   write str;
+
+}
+void trac42()
+{
+   bar();
+}
