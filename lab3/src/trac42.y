@@ -11,6 +11,8 @@
 */
 
 %{
+#include <unistd.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <malloc.h>
 #include <stddef.h>
@@ -24,6 +26,10 @@
 extern FILE *yyin;
 int yyerror(const char *s);
 int yylex(void);
+
+t_symtab *globalSymbols;
+t_symtab * current;
+int error;
 
 %}
 /* Alternative types of teh elements on the parse-value stack */
@@ -60,14 +66,15 @@ int yylex(void);
 
 %%
 
-program     : functions {$$ = mProgram($1); printf("mProgram\n");}
+program     : functions {treeRoot = mProgram($1); printf("mProgram\n");}
             ;
 
 functions   : functions function {$$ = connectFunctions($1, $2); printf("connectFunctions\n");}
             | function {$$ = $1; printf("\n");} 
             ;
 
-function    : BASIC_TYPE ID '(' formals ')' '{' decls stmnts '}' {$$ = mFunction(connectVariables($4, $7), $8, $2.strVal, $1.type, $2.lineNr); printf("%d %s at %d\n", $1.type, $2.strVal, $2.lineNr);}
+function    : BASIC_TYPE ID '(' formals ')' '{' decls stmnts '}' {$$ = mFunction(connectVariables($4, $7), $8, $2.strVal, $1.type, $2.lineNr); printf("%d %s at %d\n", $1.type, $2.strVal, $2.lineNr);
+							}
             ;
 
 formals     : formals_non_emtpty {$$ = $1;}
@@ -130,11 +137,288 @@ actuals     : exprs {$$ = $1;}
             | {$$ = NULL;}
             ;
 
-exprs       : exprs ',' expr {$$ = connectActuals($1, $3);}
+exprs       : exprs ',' expr {$$ = connectActuals($1, mActual($3));}
             | expr	{$$ = mActual($1);}
             ;
 
 %%
+
+char *varType(eType t) {
+	switch (t) {
+		case VOID:
+			return "void";
+		case BOOL:
+			return "bool";
+		case INT:
+			return "int";
+		case STRING:
+			return "string";
+	}
+	return "unknown";
+}
+
+void nodeType(t_tree n){
+	if(n != NULL){
+		switch(n->Kind){
+			case kProgram:
+				nodeType(n->Node.Program.Functions);
+				break;
+			case kFunction:
+				printf("Function: %s\n", n->Node.Function.Name);
+				printf("\tVariables:\n");
+				nodeType(n->Node.Function.Variables);
+				printf("\tStatements:\n");
+				nodeType(n->Node.Function.Stmnts);
+				printf("End %s\n\n", n->Node.Function.Name);
+				nodeType(n->Node.Function.Next);
+				break;
+			case kVariable:
+				printf("\t%d: %s %s\n", n->Node.Variable.VarKind, varType(n->Node.Variable.Type), n->Node.Variable.Name);
+				nodeType(n->Node.Variable.Next);
+				break;
+			case kAssign:
+				printf("\t%s := ", n->Node.Assign.Id);
+				nodeType(n->Node.Assign.Expr);
+				printf("\n");
+				nodeType(n->Node.Assign.Next);
+				break;
+			case kIf:
+				printf("\tIf( ");
+				nodeType(n->Node.If.Expr);
+				printf(" ) Then:\n");
+				nodeType(n->Node.If.Then);
+				if(n->Node.If.Else != NULL) {
+					printf("\n\tElse:\n");
+					nodeType(n->Node.If.Else);
+				}
+				printf("\tEnd If\n");
+				nodeType(n->Node.If.Next);
+				break;
+			case kWhile:
+				printf("\tWhile( ");
+				nodeType(n->Node.While.Expr);
+				printf(" ) \n");
+				nodeType(n->Node.While.Stmnt);
+				printf("\tEnd While\n");
+				nodeType(n->Node.While.Next);
+				break;
+			case kRead:
+				printf("\tRead: %s\n", n->Node.Read.Id);
+				nodeType(n->Node.Read.Next);
+				break;
+			case kWrite:
+				printf("\tWrite: ");
+				nodeType(n->Node.Write.Expr);
+				printf("\n");
+				nodeType(n->Node.Write.Next);
+				break;
+			case kFuncCallStmnt:
+				printf("\t%s: ", n->Node.FuncCallStmnt.FuncName);
+				nodeType(n->Node.FuncCallStmnt.Actuals);
+				printf("\n");
+				nodeType(n->Node.FuncCallStmnt.Next);
+				break;
+			case kReturn:
+				printf("\tReturn: ");
+				nodeType(n->Node.Return.Expr);
+				printf("\n");
+				nodeType(n->Node.Return.Next);
+				break;
+			case kActual:
+				nodeType(n->Node.Actual.Expr);
+				if(n->Node.Actual.Next != NULL)
+					printf(", ");
+				nodeType(n->Node.Actual.Next);
+				break;
+			case kUnary:
+				switch(n->Node.Unary.Operator){
+					case NOT:
+						printf("!");
+						break;
+					case NEG:
+						printf("-");
+						break;
+				}
+				nodeType(n->Node.Unary.Expr);
+				printf("\n");
+				break;
+			case kBinary:
+				nodeType(n->Node.Binary.LeftOperand);
+				switch(n->Node.Binary.Operator){
+					case SUB:
+						printf(" - ");
+						break;
+					case PLUS:
+						printf(" + ");
+						break;
+					case MULT:
+						printf(" * ");
+						break;
+					case DIV:
+						printf(" / ");
+						break;
+					case OR:
+						printf(" or ");
+						break;
+					case AND:
+						printf(" and ");
+						break;
+					case EQ:
+						printf(" == ");
+						break;
+					case LT:
+						printf(" < ");
+						break;
+					case LE:
+						printf(" <= ");
+						break;
+				}
+				nodeType(n->Node.Binary.RightOperand);
+				break;
+			case kIntConst:
+				printf("%d", n->Node.IntConst.Value);
+				break;
+			case kBoolConst:
+				printf("%d", n->Node.BoolConst.Value);
+				break;
+			case kStringConst:
+				printf("%s", n->Node.StringConst.Value);
+				break;
+			case kFuncCallExpr:
+				printf("%s:", n->Node.FuncCallExpr.FuncName);
+				nodeType(n->Node.FuncCallExpr.Actuals);
+				printf(" ");
+				break;
+			case kRValue:
+				printf("%s", n->Node.RValue.Id);
+				break;
+		}
+	}
+}
+
+void printAST(t_tree root){
+	nodeType(root);
+}
+
+/**
+	Name analysing
+ */
+void nameType(t_tree n){
+	if(n != NULL){
+		switch(n->Kind){
+			case kProgram:
+				nameType(n->Node.Program.Functions);
+				break;
+			case kFunction:
+				if(symtab_exist(globalSymbols, n->Node.Function.Name))
+					error++;
+				else
+					symtab_add(globalSymbols, n->Node.Function.Name);
+				nameType(n->Node.Function.Next);
+				n->Node.Function.Symbols = symtab_create();
+				current = NULL;
+				current = n->Node.Function.Symbols;
+				//check here
+				printf("All clear\n");
+				nameType(n->Node.Function.Variables);
+				nameType(n->Node.Function.Stmnts);
+				printf("Done \n");
+				break;
+			case kVariable:
+				/* Do name analysing here */
+				if(symtab_exist(current,n->Node.Variable.Name))
+					error++;
+				else
+					symtab_add(current, n->Node.Variable.Name);
+				nameType(n->Node.Variable.Next);
+				break;
+			case kAssign:
+				//check here
+				printf("assign\n");
+				if(!symtab_exist(current, n->Node.Assign.Id))
+					error++;
+				nameType(n->Node.Assign.Expr);
+				nameType(n->Node.Assign.Next);
+				break;
+			case kIf:
+				nameType(n->Node.If.Expr);
+				nameType(n->Node.If.Then);
+				nameType(n->Node.If.Else);
+				nameType(n->Node.If.Next);
+				break;
+			case kWhile:
+				nameType(n->Node.While.Expr);
+				nameType(n->Node.While.Stmnt);
+				nameType(n->Node.While.Next);
+				break;
+			case kRead:
+				//check here
+				printf("read\n");
+				if(!symtab_exist(current, n->Node.Read.Id))
+					error++;
+				nameType(n->Node.Read.Next);
+				break;
+			case kWrite:
+				printf("write\n");
+				nameType(n->Node.Write.Expr);
+				nameType(n->Node.Write.Next);
+				break;
+			case kFuncCallStmnt:
+				printf("FuncCallStmnt\n");
+				//check here
+				if(!symtab_exist(globalSymbols, n->Node.FuncCallStmnt.FuncName))
+					error++;
+				nameType(n->Node.FuncCallStmnt.Actuals);
+				nameType(n->Node.FuncCallStmnt.Next);
+				break;
+			case kReturn:
+				nameType(n->Node.Return.Expr);
+				nameType(n->Node.Return.Next);
+				break;
+			case kActual:
+				printf("actuals\n");
+				nameType(n->Node.Actual.Expr);
+				nameType(n->Node.Actual.Next);
+				break;
+			case kUnary:
+				nameType(n->Node.Unary.Expr);
+				break;
+			case kBinary:
+				nameType(n->Node.Binary.LeftOperand);
+				nameType(n->Node.Binary.RightOperand);
+				break;
+			case kIntConst:
+			case kBoolConst:
+			case kStringConst:
+				break;
+			case kFuncCallExpr:
+				printf("FuncCallExpr\n");
+				//check here
+				if(!symtab_exist(globalSymbols, n->Node.FuncCallExpr.FuncName))
+					error++;
+				nameType(n->Node.FuncCallExpr.Actuals);
+				printf("FuncCallExpr done\n");
+				break;
+			case kRValue:
+				//check here
+				if(!symtab_exist(current, n->Node.RValue.Id))
+					error++;
+				break;
+		}
+	}
+}
+
+void nameAnalyse(t_tree root){
+	error = 0;
+	nameType(root);
+	if(error != 0){
+		fprintf(stderr,"\nName analyse failed %d times\n", error);
+		exit(-1);
+	}
+	else
+		printf("\nName analyse completed\n");
+}
+
 int main (int argc, char *argv[])
 {
    int syntax_errors;
@@ -166,6 +450,12 @@ int main (int argc, char *argv[])
          } else {
             fprintf (stderr, "There were syntax errors.\n");
          }
+				 /*
+						Our special code
+				 */
+				 globalSymbols = symtab_create();
+				 printAST(treeRoot);
+				 nameAnalyse(treeRoot);
          free(basename);
          free(objname);
          free(lstname);

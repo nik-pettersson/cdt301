@@ -8,6 +8,8 @@
 #ifndef _AST_H_
 #define _AST_H_
 
+#include "symbol.h"
+
 typedef struct t_tree *t_tree;
 
 /* Size of data types in trac42 */
@@ -60,11 +62,12 @@ typedef struct {
 
 /* The function. */
 typedef struct {
-   t_tree Next;
-   t_tree Variables;  /* Local variables as well as formal parameters. */
-   t_tree Stmnts;     /* A list of statements at the top level in the funktion. */
-   char *Name;       /* The function name. */
-   eType Type;       /* The return type. */
+	t_symtab * Symbols;
+	t_tree Next;
+	t_tree Variables;  /* Local variables as well as formal parameters. */
+	t_tree Stmnts;     /* A list of statements at the top level in the funktion. */
+	char *Name;       /* The function name. */
+	eType Type;       /* The return type. */
 } yFunction;
 
 /* The variable (local variable or formal parameter). */
