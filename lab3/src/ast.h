@@ -52,8 +52,8 @@ typedef enum { SUB=MINUS, PLUS, MULT, DIV, OR, AND, EQ, LT, LE } BINOP_KIND;
 /* To distinguish between formal parameters and local variables in variable nodes. */
 typedef enum {kFormal, kLocal} vKind;
 
-/* To distinguish between the data types in the trac42 language. */
-typedef enum {VOID, BOOL, INT, STRING} eType;
+/* To distinguish between the data types in the trac42 language. FEL*/
+typedef enum {VOID, BOOL, INT, STRING, ERROR} eType;
 
 /* The program. */
 typedef struct {

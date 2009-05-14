@@ -153,6 +153,8 @@ char *varType(eType t) {
 			return "int";
 		case STRING:
 			return "string";
+		case ERROR:
+			return "error";
 	}
 	return "unknown";
 }
@@ -419,6 +421,231 @@ void nameAnalyse(t_tree root){
 		printf("\nName analyse completed\n");
 }
 
+eType typeType(t_tree n){
+	static eType funcRet = VOID;
+	t_tree tmp;
+	eType type;
+	char str[4096];
+	char * tmpStr;
+	if(n != NULL){
+		switch(n->Kind){
+			case kProgram:
+				printf("kProgram\n");
+				return typeType(n->Node.Program.Functions);
+				break;
+			case kFunction:
+				printf("kFunction\n");
+				current = n->Node.Function.Symbols;
+				funcRet =  n->Node.Function.Type;
+				if(typeType(n->Node.Function.Variables) == VOID && typeType(n->Node.Function.Stmnts) == VOID){
+					printf("happy\n");
+					strcpy(str, varType(n->Node.Function.Type));
+					strcat(str, " -> ");
+					for(tmp = n->Node.Function.Variables; tmp != NULL; tmp = tmp->Node.Variable.Next){
+						if(tmp->Node.Variable.VarKind == kFormal){
+							strcat(str, varType((eType)symtab_get(current, tmp->Node.Variable.Name)));
+							strcat(str, " x ");
+						}
+					}
+					symtab_set(globalSymbols, n->Node.Function.Name, (void *)str);
+				if(typeType(n->Node.Function.Next) != VOID)
+					return ERROR;
+				else
+					return VOID;
+				}
+				else
+					return ERROR;
+				break;
+			case kVariable:
+				printf("kvariable\n");
+				if(symtab_exist(current, n->Node.Variable.Name)){
+					symtab_set(current, n->Node.Variable.Name ,(void *)n->Node.Variable.Type);
+					if(typeType(n->Node.Variable.Next) == VOID)
+						return VOID;
+					else
+						return ERROR;
+				}
+				else
+					return ERROR;
+				break;
+			case kAssign:
+				printf("kssign\n");
+				if((eType)symtab_get(current,n->Node.Assign.Id) == typeType(n->Node.Assign.Expr) && typeType(n->Node.Assign.Next) == VOID)
+					return VOID;
+				else
+					return ERROR;
+				break;
+			case kIf:				
+				printf("kIf\n");
+				if(typeType(n->Node.If.Expr) == BOOL && typeType(n->Node.If.Then) == VOID && typeType(n->Node.If.Else) == VOID && typeType(n->Node.If.Next) == VOID)
+					return VOID;
+				else
+					return ERROR;
+				break;
+			case kWhile:
+				printf("kWhile\n");
+				if(typeType(n->Node.While.Expr) == BOOL && typeType(n->Node.While.Stmnt) == VOID && typeType(n->Node.While.Next))
+					return VOID;
+				else
+					return ERROR;
+				break;
+			case kRead:
+				printf("kRead\n");
+				if(symtab_exist(current, n->Node.Read.Id) && typeType(n->Node.Read.Next) == VOID)
+					return VOID;
+				else
+					return ERROR;
+				break;
+			case kWrite:
+				printf("kWrite\n");
+				if(typeType(n->Node.Write.Expr) != ERROR && typeType(n->Node.Write.Next) == VOID)
+					return VOID;
+				else
+					return ERROR;
+				break;
+			case kFuncCallStmnt:
+				printf("kFuncCallStmnt\n");
+				if(typeType(n->Node.FuncCallStmnt.Next) == VOID && typeType(n->Node.FuncCallStmnt.Actuals) == VOID){
+					printf("kFuncCallStmnt inside now\n");
+					strcpy(str, "> ");
+
+				printf("k\n");
+					for(tmp = n->Node.FuncCallStmnt.Actuals, printf("im in side your for loop\n"); tmp != NULL; tmp = tmp->Node.Actual.Next){
+						printf("loop\n");
+						type = typeType(tmp->Node.Actual.Expr);
+						if(type != VOID) {
+							// MIGHT BE SEGFAULT!!!
+							strcat(str, varType(typeType(tmp->Node.Actual.Expr)));
+							strcat(str, " x ");
+						}
+					}
+					tmpStr = strchr((char *)symtab_get(globalSymbols, n->Node.FuncCallStmnt.FuncName),'>');
+					printf("str: x%sx\n", str);
+					printf("str: x%sx\n", tmpStr);
+					printf("!str: %s\n" ,(char *)symtab_get(globalSymbols, n->Node.FuncCallStmnt.FuncName));
+					if(strncmp(str, tmpStr,strlen(tmpStr)) == 0){
+						printf("returning void\n");
+						return VOID;
+					}
+					else {
+						printf("strncmp(str, strchr(.........)\n"); 
+						return ERROR;
+					}
+				}
+				else
+					return ERROR;
+				break;
+			case kReturn:
+				printf("kReturn\n");
+				if(typeType(n->Node.Return.Next) == VOID && typeType(n->Node.Return.Expr) != ERROR) {
+					if(funcRet == typeType(n->Node.Return.Expr))
+						return VOID;
+					else
+						return ERROR;
+				}
+				else {
+					return ERROR;
+				}
+				break;
+			case kActual:
+				printf("kActual\n");
+				if(typeType(n->Node.Actual.Next) == VOID && typeType(n->Node.Actual.Expr) != ERROR)
+					return VOID;
+				else
+					return ERROR;
+				break;
+			case kUnary:
+				printf("kUnary\n");
+				return typeType(n->Node.Unary.Expr);	
+				break;
+			case kBinary:
+				printf("kbinary\n");
+				if(typeType(n->Node.Binary.LeftOperand) == typeType(n->Node.Binary.RightOperand)){
+					type = typeType(n->Node.Binary.LeftOperand);
+					switch(n->Node.Binary.Operator) {
+						case MINUS:
+						case PLUS:
+						case MULT:
+						case DIV:
+							return type;
+						case OR:
+						case AND:
+						case EQ:
+						case LT:
+						case LE:
+							return BOOL;
+					}
+				}
+				else
+					return ERROR;
+				break;
+			case kIntConst:
+				printf("kInt\n");
+				return INT;
+			case kBoolConst:
+				printf("kBol\n");
+				return BOOL;
+			case kStringConst:
+				printf("kString\n");
+				return STRING;
+			case kFuncCallExpr:
+				printf("kFuncCallExpr\n");
+				if(typeType(n->Node.FuncCallExpr.Actuals) == VOID) {
+					strcpy(str, "> ");
+					for(tmp = n->Node.FuncCallExpr.Actuals; tmp != NULL; tmp = tmp->Node.Actual.Next){
+						type = typeType(tmp->Node.Actual.Expr);
+						if(type != VOID) {
+							// MIGHT BE SEGFAULT!!!
+							strcat(str, varType(typeType(tmp->Node.Actual.Expr)));
+							strcat(str, " x ");
+						}
+					}
+					printf("actuals are done: %s\n", str);
+					tmpStr = strchr((char *)symtab_get(globalSymbols, n->Node.FuncCallExpr.FuncName),'>');
+					if(strncmp(str, tmpStr, strlen(tmpStr)) == 0){
+						printf("strchr crashes us\n");
+						strcpy(str, (char *)symtab_get(globalSymbols, n->Node.FuncCallExpr.FuncName));
+						if(str != NULL){
+							printf("%s\n %c\n", str, str[0]);
+							switch(str[0]){
+								case 'v':
+									return VOID;
+									break;
+								case 'i':
+									return INT;
+									break;
+								case 's':
+									return STRING;
+									break;
+							}
+							return type;
+						}
+					}
+					else {
+						printf("strncmp(%s, %s)\n", str, tmpStr); 
+						return ERROR;
+					}
+				}
+				else
+					return ERROR;
+				break;
+			case kRValue:
+				printf("kRValue\n");
+				return (eType)symtab_get(current, n->Node.RValue.Id);
+				break;
+		}
+	}
+	else
+		return VOID;
+	return ERROR;
+}
+
+void typeAnalyse(t_tree root){
+	eType ret = typeType(root);
+	printf("\n\n%s\n\n", varType(ret));
+
+}
+
 int main (int argc, char *argv[])
 {
    int syntax_errors;
@@ -456,6 +683,7 @@ int main (int argc, char *argv[])
 				 globalSymbols = symtab_create();
 				 printAST(treeRoot);
 				 nameAnalyse(treeRoot);
+				 typeAnalyse(treeRoot);
          free(basename);
          free(objname);
          free(lstname);
