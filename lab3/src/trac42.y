@@ -314,8 +314,10 @@ void nameType(t_tree n){
 			case kFunction:
 				if(symtab_exist(globalSymbols, n->Node.Function.Name))
 					error++;
-				else
+				else {
 					symtab_add(globalSymbols, n->Node.Function.Name);
+					printf("Added %s to global symbols\n", n->Node.Function.Name);
+				}
 				nameType(n->Node.Function.Next);
 				n->Node.Function.Symbols = symtab_create();
 				current = NULL;
@@ -330,8 +332,10 @@ void nameType(t_tree n){
 				/* Do name analysing here */
 				if(symtab_exist(current,n->Node.Variable.Name))
 					error++;
-				else
+				else {
 					symtab_add(current, n->Node.Variable.Name);
+					printf("Added %s to local symbols\n", n->Node.Variable.Name);
+				}
 				nameType(n->Node.Variable.Next);
 				break;
 			case kAssign:
@@ -437,71 +441,99 @@ eType typeType(t_tree n){
 				printf("kFunction\n");
 				current = n->Node.Function.Symbols;
 				funcRet =  n->Node.Function.Type;
-				if(typeType(n->Node.Function.Variables) == VOID && typeType(n->Node.Function.Stmnts) == VOID){
+				if(typeType(n->Node.Function.Variables) == VOID){
 					printf("happy\n");
 					strcpy(str, varType(n->Node.Function.Type));
 					strcat(str, " -> ");
 					for(tmp = n->Node.Function.Variables; tmp != NULL; tmp = tmp->Node.Variable.Next){
+						printf("Iterating formals for '%s'\n", n->Node.Function.Name);
 						if(tmp->Node.Variable.VarKind == kFormal){
 							strcat(str, varType((eType)symtab_get(current, tmp->Node.Variable.Name)));
 							strcat(str, " x ");
 						}
 					}
+					printf("Setting '%s' -> '%s'\n", n->Node.Function.Name, str);
 					symtab_set(globalSymbols, n->Node.Function.Name, (void *)str);
-				if(typeType(n->Node.Function.Next) != VOID)
-					return ERROR;
-				else
-					return VOID;
+
+					if(typeType(n->Node.Function.Stmnts) == VOID) {
+						printf("kFunction '%s' OK\n", n->Node.Function.Name);
+						if(typeType(n->Node.Function.Next) != VOID) {
+							printf("kFunction '%s' ERROR (next function != VOID)\n", n->Node.Function.Name);
+							return ERROR;
+						}
+						else
+							return VOID;
+					}
+					else{
+						printf("kFunction: Error\n");
+						return ERROR;
+					}
 				}
-				else
-					return ERROR;
 				break;
 			case kVariable:
 				printf("kvariable\n");
 				if(symtab_exist(current, n->Node.Variable.Name)){
+					printf("Setting %s -> %s\n", n->Node.Variable.Name, varType(n->Node.Variable.Type));
 					symtab_set(current, n->Node.Variable.Name ,(void *)n->Node.Variable.Type);
-					if(typeType(n->Node.Variable.Next) == VOID)
+					if(typeType(n->Node.Variable.Next) == VOID) {
+						printf("kVariable '%s' OK\n", n->Node.Variable.Name);
 						return VOID;
-					else
+					}
+					else {
+						printf("kVariable '%s' ERROR (next variable != VOID)\n", n->Node.Variable.Name);
 						return ERROR;
+					}
 				}
-				else
+				else {
+					printf("kVariable '%s' ERROR (not in symbol table)\n", n->Node.Variable.Name);
 					return ERROR;
+				}
 				break;
 			case kAssign:
-				printf("kssign\n");
-				if((eType)symtab_get(current,n->Node.Assign.Id) == typeType(n->Node.Assign.Expr) && typeType(n->Node.Assign.Next) == VOID)
+				if((eType)symtab_get(current,n->Node.Assign.Id) == typeType(n->Node.Assign.Expr) && typeType(n->Node.Assign.Next) == VOID){
+					printf("kssign %s\n", n->Node.Assign.Id);
 					return VOID;
-				else
+				}
+				else{
+					printf("kAssign: Error %s\n", n->Node.Assign.Id);
 					return ERROR;
+				}
 				break;
 			case kIf:				
 				printf("kIf\n");
 				if(typeType(n->Node.If.Expr) == BOOL && typeType(n->Node.If.Then) == VOID && typeType(n->Node.If.Else) == VOID && typeType(n->Node.If.Next) == VOID)
 					return VOID;
-				else
+				else{
+					printf("kIf: Error\n");
 					return ERROR;
+				}
 				break;
 			case kWhile:
 				printf("kWhile\n");
-				if(typeType(n->Node.While.Expr) == BOOL && typeType(n->Node.While.Stmnt) == VOID && typeType(n->Node.While.Next))
+				if(typeType(n->Node.While.Expr) == BOOL && typeType(n->Node.While.Stmnt) == VOID && typeType(n->Node.While.Next) == VOID)
 					return VOID;
-				else
+				else{
+					printf("kWhile: Error\n");
 					return ERROR;
+				}
 				break;
 			case kRead:
-				printf("kRead\n");
+				printf("kRead %d %s\n", symtab_exist(current, n->Node.Read.Id), n->Node.Read.Id);
 				if(symtab_exist(current, n->Node.Read.Id) && typeType(n->Node.Read.Next) == VOID)
 					return VOID;
-				else
+				else{
+					printf("kRead error\n");
 					return ERROR;
+				}
 				break;
 			case kWrite:
 				printf("kWrite\n");
 				if(typeType(n->Node.Write.Expr) != ERROR && typeType(n->Node.Write.Next) == VOID)
 					return VOID;
-				else
+				else{
+					printf("kWrite: Error next write and or Expr\n");
 					return ERROR;
+				}
 				break;
 			case kFuncCallStmnt:
 				printf("kFuncCallStmnt\n");
@@ -509,7 +541,7 @@ eType typeType(t_tree n){
 					printf("kFuncCallStmnt inside now\n");
 					strcpy(str, "> ");
 
-				printf("k\n");
+					printf("k\n");
 					for(tmp = n->Node.FuncCallStmnt.Actuals, printf("im in side your for loop\n"); tmp != NULL; tmp = tmp->Node.Actual.Next){
 						printf("loop\n");
 						type = typeType(tmp->Node.Actual.Expr);
@@ -532,18 +564,23 @@ eType typeType(t_tree n){
 						return ERROR;
 					}
 				}
-				else
+				else{
+					printf("kFuncCallStmnt: Error \n");
 					return ERROR;
+				}
 				break;
 			case kReturn:
 				printf("kReturn\n");
 				if(typeType(n->Node.Return.Next) == VOID && typeType(n->Node.Return.Expr) != ERROR) {
 					if(funcRet == typeType(n->Node.Return.Expr))
 						return VOID;
-					else
+					else{
+						printf("kReturn: Error\n");
 						return ERROR;
+					}
 				}
 				else {
+					printf("kReturn: Error\n");
 					return ERROR;
 				}
 				break;
@@ -551,8 +588,10 @@ eType typeType(t_tree n){
 				printf("kActual\n");
 				if(typeType(n->Node.Actual.Next) == VOID && typeType(n->Node.Actual.Expr) != ERROR)
 					return VOID;
-				else
+				else{
+					printf("kActual: error\n");
 					return ERROR;
+				}
 				break;
 			case kUnary:
 				printf("kUnary\n");
@@ -576,8 +615,10 @@ eType typeType(t_tree n){
 							return BOOL;
 					}
 				}
-				else
+				else{
+					printf("kBinary: Error\n");
 					return ERROR;
+				}
 				break;
 			case kIntConst:
 				printf("kInt\n");
@@ -600,8 +641,10 @@ eType typeType(t_tree n){
 							strcat(str, " x ");
 						}
 					}
+					printf("Symtab_get(%s): %s\n", n->Node.FuncCallExpr.FuncName, (char *)symtab_get(globalSymbols, n->Node.FuncCallExpr.FuncName));
 					printf("actuals are done: %s\n", str);
 					tmpStr = strchr((char *)symtab_get(globalSymbols, n->Node.FuncCallExpr.FuncName),'>');
+					printf("After strchar %s\n", tmpStr);
 					if(strncmp(str, tmpStr, strlen(tmpStr)) == 0){
 						printf("strchr crashes us\n");
 						strcpy(str, (char *)symtab_get(globalSymbols, n->Node.FuncCallExpr.FuncName));
@@ -626,8 +669,10 @@ eType typeType(t_tree n){
 						return ERROR;
 					}
 				}
-				else
+				else{
+					printf("kFuncCallExpr: Error\n");
 					return ERROR;
+				}
 				break;
 			case kRValue:
 				printf("kRValue\n");
