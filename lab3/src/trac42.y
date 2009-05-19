@@ -691,6 +691,86 @@ void typeAnalyse(t_tree root){
 
 }
 
+void codeType(t_tree n, tCode *c){
+	if(n != NULL){
+		switch(n->Kind){
+			case kProgram:
+				codeType(n->Node.Program.Functions, c);
+				break;
+			case kFunction:
+				emit_fun_label(c, n->Node.Function.Name);
+				emit_link(c);
+				codeType(n->Node.Function.Variables, c);
+				codeType(n->Node.Function.Stmnts, c);
+				codeType(n->Node.Function.Next, c);
+				break;
+			case kVariable:
+				switch(n->Node.Variable.VarKind){
+					case kFormal:
+						break;
+					case kLocal:
+						switch(n->Node.Variable.Type){
+							case INT:
+								emit_decl(c, INT_SIZE, n->Node.Variable.Name);
+								break;
+							case BOOL:
+								emit_decl(c, BOOL_SIZE, n->Node.Variable.Name);
+								break;
+							case STRING:
+								emit_decl(c, STRING_SIZE, n->Node.Variable.Name);
+								break;
+							case VOID:
+								break;
+							case ERROR:
+								break;
+						}
+						break;
+				}
+				codeType(n->Node.Variable.Next, c);
+				break;
+			case kAssign:
+				break;
+			case kIf:
+				break;
+			case kWhile:
+				break;
+			case kRead:
+				break;	
+			case kWrite:
+				break;
+			case kFuncCallStmnt:
+				break;
+			case kReturn:
+				break;
+			case kActual:
+				break;
+			case kUnary:
+				break;
+			case kBinary:
+				break;
+			case kIntConst:
+				emit_push_int(c, n->Node.IntConst.Value);
+				break;
+			case kBoolConst:
+				emit_push_bool(c, n->Node.BoolConst.Value);
+				break;
+			case kStringConst:
+				emit_push_string(c, n->Node.StringConst.Value);
+				break;
+			case kFuncCallExpr:
+				break;
+			case kRValue:
+				break;
+		}
+	}
+}
+
+tCode * generateCode(t_tree root){
+	tCode *c = code_buffer_create();
+	codeType(root, c);
+	return c;
+}
+
 int main (int argc, char *argv[])
 {
    int syntax_errors;
@@ -729,6 +809,9 @@ int main (int argc, char *argv[])
 				 printAST(treeRoot);
 				 nameAnalyse(treeRoot);
 				 typeAnalyse(treeRoot);
+
+				 code_buffer_print(generateCode(treeRoot), lstname, objname);
+
          free(basename);
          free(objname);
          free(lstname);
