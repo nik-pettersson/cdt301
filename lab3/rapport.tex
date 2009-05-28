@@ -1,0 +1,183 @@
+\documentclass[a4paper,swedish]{article}
+
+\usepackage[latin1]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[swedish]{babel}
+\usepackage{amsmath}
+
+
+\begin{document}
+
+\begin{titlepage}
+\setlength{\parindent}{0pt}
+\centerline{MÄLARDALENS HÖGSKOLA}
+
+\vspace{5cm}
+
+{\Huge \textbf{CDT301 Lab3 Rapport}}
+
+\smallskip
+
+{\large Vårterminen 2009, lp4}
+
+\rule{\linewidth}{1pt}
+
+\smallskip
+
+{\LARGE Trac42 Kompilator}
+
+\vspace{1cm}
+
+\begin{tabular}{ll}
+Niklas Pettersson & npn06002@student.mdh.se\\
+Lars Cederholm & lcm06001@student.mdh.se
+\end{tabular}
+
+\vspace{5cm}
+
+\LARGE{Lärare: Christer Sandberg}
+
+\end{titlepage}
+
+
+\begin{abstract}
+This report constains the brilliant knowledge locked away for centuries:
+This document details the solutions and problems in creating a trac42 compiler using the YACC, FLEX and Bison compiler creation tools.
+\end{abstract}
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+\section{Inledning}
+
+Uppgiften som rapporten behandlar gäller att implementera en kompilator för programmeringsspråket trac42. Till vår hjälp hade vi ett framework innehållande grammatik för trac42 och en fungerande parser.
+
+Vår uppgift därför ut på att generera ett Abstrakt syntaxträd för att sedan kunna göra en semantisk analys innehållande namn- och typanalys. Vi har sedan tagit det trädet och genererat kod till trac42i miljön.
+
+\section{Översikt av kompilatorn}
+
+\subsection{Parsern}
+
+Följer grammatiken för att kunna bygga upp en träd struktur som används i de senare stegen. Här hittas alla syntax fel som programmeraren har gjort.
+
+\subsection{Namnanalys}
+
+Går igenom hela syntax trädet och undersöker om alla namn som använts är deklarerade och lägger då till dessa namn i symboltabeller beroende på om namnen är lokala i funktionen eller globala över hela programmet.
+
+\subsection{Typanalys}
+
+Går igenom alla noder från trädet och undersöker användningen av typerna i programmet för att hitta fel där typerna inte är kompatibla med den nodtyp som undersöks.
+
+\subsection{Offsetberäkningen}
+
+Här räknar vi ut var på stacken de olika variablerna och argumenten kommer finnas och hur stora dessa är.
+
+\subsection{Kodgenerering}
+
+Nu stegar vi igenom trädet och för varje uttryck genererar vi den motsvarande koden till trac42is stackspråk.
+
+\section{Parsern}
+Med hjälp av grammatiken som beskriver trac42 som Bison följer, för varje grammatisk regel har vi skapat en nod till det abstrakta syntaxträdet som sedan skickas uppåt med noder som underliggande regler genererat för att skapa ett träd.
+
+\section{Abstrakt syntaxträd}
+I de olika passen som görs mot syntaxträdet så används rekursiva funktioner som innehåller switchsatser för att avgöra vilken typ av nod som hanteras just nu.
+Beroende på pass och typ av nod så görs rekursionen i olika ordning, detta är för att vissa saker måste göras före andra.
+
+\section{Semantisk Analys}
+I den semantiska analysen har vi gjort två pass över trädet för att se till att inga semantiska fel finns i programmet.
+\subsection{Namnanalys}
+I det här passet bygger vi upp en symboltabell för varje funktion i programmet samt en symboltabell för globala namn.
+Det första vi gör är att skapa den globala symboltabellen för funktionsnamnen för att tillåta användning av funktionerna i funktionskropparna.
+De lokala symboltabellerna byggs upp genom att först gå igenom alla deklarationer samt parametrar till funktionen och lägga dessa namn i den lokala tabellen, om dessa redan är deklarerade så genereras ett fel.
+Sedan gås funktionen igenom och alla namn testas mot symboltabellen för att se till att inga okända namn används.
+\subsection{Typanalys}
+I detta pass stegas trädet igenom och för varje nod som stöts på kontrolleras att de typer som finns i undernoderna stämmer överens med de förväntade typerna.
+	\subsubsection{Program}
+	En Programnod består av Function som förväntas returnera void.
+	\subsubsection{Function}
+	En Function innehåller Variable, Stmnt och nästa funktion alla ska returnera void för ett komplett program.
+	\subsubsection{Variable}
+	I variablenoden så läggs typen på variabeln in i symboltabellen och om allt gick som det ska så returneras void.
+	\subsubsection{Stmnt}
+	Samlingsnamn för noderna Assign, If, While, Read, Write, Return, FuncCallStmnt som alla ska returnera void om de är korrekta.
+	\subsubsection{Assign}
+	Jämför vilken typ som nodens identifierare har med hjälp av symboltabellen mot typen som Expr returnerar,
+	efter detta kontrolleras att nästa Stmnt returnerar void.
+	\subsubsection{If}
+	Består av en Exprnod som ska ha typen bool, det finns även then, else och nextnod som alla ska returnera void om de är korrekta.
+	\subsubsection{While}
+	Består av en Exprnod som ska ha typen bool och en  Stmnt och next som båda ska returnera void om de är korrekta.
+	\subsubsection{Read}
+	Kollar id mot symboltabellen och kollar nextnoden så att den returnerar void.
+	\subsubsection{Write}
+	Kollar så att next returnerar void och att exprnoden inte är error.
+	\subsubsection{Return}
+	Kollar så att next returnerar void och att exprnoden inte är error.
+	\subsubsection{FuncCallStmnt}
+	Hämtar ut från symboltabellen med hjälp av funktionsnamnet typen för funktionen och jämför med Actualslistan, sen kollas next noden mot void.
+	\subsubsection{Expr}
+	Samlingsnamn för FuncCallExpr, Unary, Binary, IntConst, BoolConst, StringConst och RValue som alla ska returnera typen som associeras med innehållet i noden.
+	\subsubsection{FuncCallExpr}
+	Hämtar ut från symboltabellen med hjälp av funktionsnamnet typen för funktionen och jämför med Actualslistan, sen returneras retur typen för funktionen.
+	\subsubsection{Actual}
+	Kollar så att next returnerar void och att exprnoden inte är error.
+	\subsubsection{Unary}
+	Returnerar typen av Exprnoden.
+	\subsubsection{Binary}
+	Jämför typerna för leftoperandnoden med rightoperandnoden och returnera den typen.
+	\subsubsection{IntConst}
+	Returnera int som typ.
+	\subsubsection{BoolConst}
+	Returnera bool som typ.
+	\subsubsection{StringConst}
+	Returnera string som typ.
+	\subsubsection{RValue}
+	Hämtar ut typen ur symboltabellen och returnerar den.
+\section{Kodgenerering}
+Då det är stackkod som genereras måste vi först räkna ut offset för alla variabler och parametrar relativt till funktionens frame pointer (FP).
+När alla offsets är beräknade kan vi påbörja kodgenereringen.
+\subsection{Offset beräkning}
+\subsubsection{Parameter offset}
+Offset för parametrar börjar om på 2 för varje funktion därför att aktiveringsposten innehåller returaddressen precis ovanför FP.
+När man pushar parametrar på stacken blir offseten olika om man pushar från vänster till höger eller vice versa. Detta i sig spelar ingen roll så länge man är konsekvent och håller sig till det ena eller andra sättet.
+Detta är viktigt när vi sedan vill komma åt en parameter vi tidigare pushat då vi måste kunna relatera vart på stacken parametern finns jämfört med vilken position parametern har i funktionens parameterlista.
+Vi har därför valt att pusha parametrar från höger till vänster, vilket betyder att den första parametern i funktionens parameterlista hamnar längst upp på stacken jämfört med de övriga parametrarna.
+Vi behöver veta vad nästa offset blir om det är fler parametrar så därför skrivs värdet över med den nya offseten.
+
+Algoritm:
+\begin{verbatim}
+for each Function func in Program do {
+  formaloffset := 2
+  for each Formal f in func do {
+    AddOffset(f, formaloffset)
+    formaloffset := formaloffset + f.size
+  }
+}
+\end{verbatim}
+
+\subsubsection{Local offset}
+För att beräkna offset för lokala variabler så behöver vi först räkna ut offseten som är föregående offset minus variabelns storlek.
+
+Algoritm:
+\begin{verbatim}
+for each Function func in Program do {
+  localoffset := 0
+  for each Variable v in func do {
+    localoffset := localoffset - v.size
+    AddOffset(v, localoffset)
+  }
+}
+\end{verbatim}
+\subsection{Stackkods generering}
+Kod genereras genom att traversera trädet och kalla befintliga funktioner beroende på typ av nod. Genom att använda de befintliga kodgenererings verktygen har ett minimalt antal problem uppstått. Det enda egentliga problemet som varit var att veta vart t.ex. en if-sats skall hoppa om den utvärderas till sant.
+Vi löste detta problem genom att spara undan de noder som skapas när instruktionerna för `BRF' och `BRA' läggs till i kod-trädet.
+
+\section{Testning}
+Vi testade alla medföljande testfiler och jämförde våran kompilators resultat med goodt42 och fann att den ända skillnanden är att vi hanterar argument i en annan ordning mot den kompilatorn men får ändå samma slutresultat på programmen.
+
+\section{Slutsats}
+Att skriva en kompilator med verktygen vi använde och med den grammatik samt stödfunktioner från labbskelettet har gett oss en god inblick i de utmaningar och till viss del problem man kan stöta på.
+\end{document}

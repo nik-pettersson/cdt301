@@ -1,0 +1,40 @@
+\select@language {swedish}
+\contentsline {section}{\numberline {1}Inledning}{3}
+\contentsline {section}{\numberline {2}\"Oversikt av kompilatorn}{3}
+\contentsline {subsection}{\numberline {2.1}Parsern}{3}
+\contentsline {subsection}{\numberline {2.2}Namnanalys}{3}
+\contentsline {subsection}{\numberline {2.3}Typanalys}{3}
+\contentsline {subsection}{\numberline {2.4}Offsetber\"akningen}{3}
+\contentsline {subsection}{\numberline {2.5}Kodgenerering}{3}
+\contentsline {section}{\numberline {3}Parsern}{3}
+\contentsline {section}{\numberline {4}Abstrakt syntaxtr\"ad}{3}
+\contentsline {section}{\numberline {5}Semantisk Analys}{4}
+\contentsline {subsection}{\numberline {5.1}Namnanalys}{4}
+\contentsline {subsection}{\numberline {5.2}Typanalys}{4}
+\contentsline {subsubsection}{\numberline {5.2.1}Program}{4}
+\contentsline {subsubsection}{\numberline {5.2.2}Function}{4}
+\contentsline {subsubsection}{\numberline {5.2.3}Variable}{4}
+\contentsline {subsubsection}{\numberline {5.2.4}Stmnt}{4}
+\contentsline {subsubsection}{\numberline {5.2.5}Assign}{4}
+\contentsline {subsubsection}{\numberline {5.2.6}If}{5}
+\contentsline {subsubsection}{\numberline {5.2.7}While}{5}
+\contentsline {subsubsection}{\numberline {5.2.8}Read}{5}
+\contentsline {subsubsection}{\numberline {5.2.9}Write}{5}
+\contentsline {subsubsection}{\numberline {5.2.10}Return}{5}
+\contentsline {subsubsection}{\numberline {5.2.11}FuncCallStmnt}{5}
+\contentsline {subsubsection}{\numberline {5.2.12}Expr}{5}
+\contentsline {subsubsection}{\numberline {5.2.13}FuncCallExpr}{5}
+\contentsline {subsubsection}{\numberline {5.2.14}Actual}{5}
+\contentsline {subsubsection}{\numberline {5.2.15}Unary}{5}
+\contentsline {subsubsection}{\numberline {5.2.16}Binary}{5}
+\contentsline {subsubsection}{\numberline {5.2.17}IntConst}{5}
+\contentsline {subsubsection}{\numberline {5.2.18}BoolConst}{6}
+\contentsline {subsubsection}{\numberline {5.2.19}StringConst}{6}
+\contentsline {subsubsection}{\numberline {5.2.20}RValue}{6}
+\contentsline {section}{\numberline {6}Kodgenerering}{6}
+\contentsline {subsection}{\numberline {6.1}Offset ber\"akning}{6}
+\contentsline {subsubsection}{\numberline {6.1.1}Parameter offset}{6}
+\contentsline {subsubsection}{\numberline {6.1.2}Local offset}{6}
+\contentsline {subsection}{\numberline {6.2}Stackkods generering}{7}
+\contentsline {section}{\numberline {7}Testning}{7}
+\contentsline {section}{\numberline {8}Slutsats}{7}
